@@ -9,6 +9,7 @@ class Player(FirestoreDocument):
     def __init__(self):
         super().__init__()
         self.name: str = str()
+        self.group_name: str = str()
         self.url: str = str()
         self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
         self.qualified: bool = bool()
@@ -31,8 +32,8 @@ class Group(FirestoreDocument):
         self.name: str = str()
         self.fullname: str = str()
         self.player_count: int = int()
-        self.player_maps: list = list()
         self.selection: bool = bool()
+        self.player_name: str = str()
         self.url: str = str()
         self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
 
