@@ -1,0 +1,7 @@
+venv/
+mdb/
+.idea/
+__pycache__
+*.env
+*.csv
+google-cloud.json
