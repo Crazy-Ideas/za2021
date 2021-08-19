@@ -20,8 +20,10 @@ if __name__ == "__main__":
 
 @app.shell_context_processor
 def make_shell_context() -> dict:
+    from main import update_url
     return {
         "User": User,
         "Group": Group,
         "Player": Player,
+        "update_url": update_url,
     }
