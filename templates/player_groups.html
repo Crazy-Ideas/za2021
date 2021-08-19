@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <h3 class="mb-2 pt-2">Player Groups</h3>
+    <div class="datatable" data-mdb-fixed-header="true">
+        <table>
+            <thead data-mdb-fixed-header="true">
+            <tr>
+                <th class="th-sm">#</th>
+                <th class="th-sm">Name</th>
+                <th class="th-sm">Image</th>
+                <th class="th-sm">Players</th>
+                <th class="th-sm">Rank</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for group in groups %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><p class="h5">{{ group.fullname }}</p></td>
+                    <td>
+                        <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="200">
+                    </td>
+                    <td>{{ group.player_count }}</td>
+                    <td>{{ group.group_rank }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

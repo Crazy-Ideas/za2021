@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <section>
+        <div id="intro">
+            <div class="container d-flex justify-content-center align-items-center h-100">
+                <div class="row align-items-center">
+                    <div class="col-md-6 my-5">
+                        <h1 class="mb-5">ZA Competition</h1>
+                        <p class="lead mb-5">
+                            This application is to identify a champion using pair wise competition. Each group/entity
+                            has multiple image which will compete against each other. The user will select the winner
+                            from 2 pictures and competition proceeds into several rounds till there is no possible match
+                            up left.
+                        </p>
+                        <button type="button" class="btn btn-light btn-rounded btn-lg me-1"
+                                onclick="location.href='{{ url_for("view_player_groups") }}'">
+                            Players
+                        </button>
+                        <button type="button" class="btn btn-primary btn-rounded btn-lg ms-1">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--Section: Design Block-->
+{% endblock %}

@@ -4,15 +4,11 @@ from flask import Flask
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-cloud.json"
 
-from models import User, Group, Player
+from models import User, Player
 
 app = Flask(__name__)
 
-
-@app.route("/")
-def hello_world():  # put application"s code here
-    return "Hello World!"
-
+from routes import *
 
 if __name__ == "__main__":
     app.run()
