@@ -40,6 +40,18 @@ class Group(FirestoreDocument):
     def __repr__(self):
         return f"{self.name}:{self.fullname}:P#{self.player_count}"
 
+    @property
+    def rank_average_str(self) -> str:
+        return f"{(self.group_rank / self.player_count):07.2f}"
+
+    @property
+    def player_count_str(self) -> str:
+        return f"{self.player_count:02}"
+
+    @property
+    def group_rank_str(self) -> str:
+        return f"{self.group_rank:05}"
+
 
 Group.init()
 

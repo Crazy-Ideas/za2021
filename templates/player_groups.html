@@ -1,31 +1,97 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-    <h3 class="mb-2 pt-2">Player Groups</h3>
-    <div class="datatable" data-mdb-fixed-header="true">
-        <table>
-            <thead data-mdb-fixed-header="true">
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">Player Groups</h3>
+
+        </div>
+        <div class="col-md-3">
+            <div class="input-group mt-2 mt-2">
+                <!--suppress HtmlFormInputWithoutLabel -->
+                <input type="text" class="form-control" id="searchInput" placeholder="Search"/>
+                <button class="btn btn-primary" id="searchButton" type="button">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="dtb" class="datatable" data-mdb-fixed-header="true" data-mdb-max-height="850" data-mdb-pagination="false"
+         data-mdb-hover="true">
+        <table data-mdb>
+            <thead>
             <tr>
                 <th class="th-sm">#</th>
                 <th class="th-sm">Name</th>
-                <th class="th-sm">Image</th>
+                <th class="th-sm" data-mdb-sort="false">Image</th>
                 <th class="th-sm">Players</th>
                 <th class="th-sm">Rank</th>
+                <th class="th-sm">Average</th>
+                <th class="th-sm">Action</th>
             </tr>
             </thead>
             <tbody>
             {% for group in groups %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td><p class="h5">{{ group.fullname }}</p></td>
+                    <td>{{ group.fullname }} ({{ group.name }})</td>
                     <td>
-                        <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="200">
+                        <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="100"
+                             data-mdb-toggle="modal" data-mdb-target="#imageModal">
                     </td>
-                    <td>{{ group.player_count }}</td>
-                    <td>{{ group.group_rank }}</td>
+                    <td>{{ group.player_count_str }}</td>
+                    <td>{{ group.group_rank_str }}</td>
+                    <td>{{ group.rank_average_str }}</td>
+                    <td>
+                        <a href="#" class="btn btn-primary btn-floating btn-lg">
+                            <i class="fas fa-folder-open"></i>
+                        </a>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <!-- Section Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="btn-close-wrapper">
+                    <button type="button" class="btn-modal-close btn-close" data-mdb-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="modal-body-preview">
+                        <img src="" alt="No Image" class="w-100"/>
+                        <div class="modal-image-gradient"></div>
+                        <div class="preview-btn-container">
+                            <button class="btn btn-primary"><i class="fas fa-folder-open me-2"></i>Open</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <!--suppress JSUnresolvedVariable -->
+    <script>
+        document.getElementById("searchButton").addEventListener("click", () => {
+            const searchValue = document.getElementById("searchInput").value;
+            mdb.Datatable.getInstance(document.getElementById("dtb")).search(searchValue);
+        });
+        document.getElementById("searchInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const searchValue = document.getElementById("searchInput").value;
+                mdb.Datatable.getInstance(document.getElementById("dtb")).search(searchValue);
+            }
+        });
+        document.getElementById("imageModal").addEventListener("show.bs.modal", (e) => {
+            if (e.relatedTarget.src) {
+                e.target.querySelector("img").src = e.relatedTarget.src;
+            }
+        });
+    </script>
 {% endblock %}
