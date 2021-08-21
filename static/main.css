@@ -34,6 +34,17 @@
     z-index: 1;
 }
 
+.btn-select-wrapper {
+    position: absolute;
+    display: flex;
+    padding: 0.5rem;
+    right: 10px;
+    top: 10px;
+    border-radius: 100%;
+    z-index: 1;
+}
+
+
 .preview-btn-container {
     position: absolute;
     bottom: 50px;

@@ -1,5 +1,6 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from copy import deepcopy
 from datetime import timedelta, datetime
 from typing import List
 
@@ -7,20 +8,22 @@ import pytz
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-cloud.json"
 
-from config import Config
+from google.cloud.storage import Client
 from models import Player, Group
 
 
 def generate_url(player: Player) -> Player:
-    possible_filenames: List[str] = [f"images/{player.name}.{ext}" for ext in Config.IMG_EXT]
-    filename: str = next((filename for filename in possible_filenames if Config.BUCKET.blob(filename).exists()), str())
+    bucket = Client().bucket("za-2021")
+    possible_filenames: List[str] = [f"images/{player.name}.{ext}" for ext in ("jpg", "jpeg", "png")]
+    filename: str = next((filename for filename in possible_filenames if bucket.blob(filename).exists()), str())
     if not filename:
         print(f"{player} Storage Image does not exists.")
         return player
     expiration: timedelta = timedelta(days=7)
-    player.url = Config.BUCKET.blob(filename).generate_signed_url(version="v4", expiration=expiration)
-    player.url_expiration = datetime.now(tz=pytz.UTC) + expiration
-    return player
+    player_with_url: Player = deepcopy(player)
+    player_with_url.url = bucket.blob(filename).generate_signed_url(version="v4", expiration=expiration)
+    player_with_url.url_expiration = datetime.now(tz=pytz.UTC) + expiration
+    return player_with_url
 
 
 # noinspection PyUnusedLocal

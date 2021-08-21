@@ -37,13 +37,14 @@
                     <td>{{ group.fullname }} ({{ group.name }})</td>
                     <td>
                         <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="100"
-                             data-mdb-toggle="modal" data-mdb-target="#imageModal">
+                             data-mdb-toggle="modal" data-mdb-target="#imageModal" data-ci-group-id="{{ group.id }}">
                     </td>
                     <td>{{ group.player_count_str }}</td>
                     <td>{{ group.group_rank_str }}</td>
                     <td>{{ group.rank_average_str }}</td>
                     <td>
-                        <a href="#" class="btn btn-primary btn-floating btn-lg">
+                        <a href="{{ url_for('players_in_a_group', group_id=group.id) }}"
+                           class="btn btn-primary btn-floating btn-lg">
                             <i class="fas fa-folder-open"></i>
                         </a>
                     </td>
@@ -65,7 +66,12 @@
                         <img src="" alt="No Image" class="w-100"/>
                         <div class="modal-image-gradient"></div>
                         <div class="preview-btn-container">
-                            <button class="btn btn-primary"><i class="fas fa-folder-open me-2"></i>Open</button>
+                            <a class="btn btn-primary" id="openGroupModal"
+                               href="{{ url_for('players_in_a_group', group_id='group_id_placeholder') }}">
+                                <span id="modalGroupId" class="invisible"></span>
+                                <i class="fas fa-folder-open me-2"></i>
+                                Open
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -92,6 +98,8 @@
             if (e.relatedTarget.src) {
                 e.target.querySelector("img").src = e.relatedTarget.src;
             }
+            const openButton = document.getElementById("openGroupModal")
+            openButton.href = openButton.href.replace("group_id_placeholder", e.relatedTarget.dataset.ciGroupId);
         });
     </script>
 {% endblock %}

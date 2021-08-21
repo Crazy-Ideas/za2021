@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">{{ title }}</h3>
+        </div>
+        <div class="col-md-3 text-end">
+            <a href="{{ url_for('view_player_groups') }}" class="btn btn-lg btn-light btn-floating">
+                <i class="fas fa-times fa-2x"></i>
+            </a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md">
+            <h4 class="mb-2 mt-2">Playing IX</h4>
+        </div>
+    </div>
+    <div class="lightbox">
+        {% for player_batch in playingIX|batch(6) %}
+            <div class="row">
+                {% for player in player_batch %}
+                    <div class="col-md-2 mt-2">
+                        <div class="modal-content">
+                            <div class="btn-select-wrapper">
+                                <button onclick="selectPlayer('{{ player.id }}')"
+                                        type="button" class="btn btn-floating btn-outline-danger">
+                                    <i class="fas fa-times fa-2x"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body-preview">
+                                <img src="{{ player.url }}" data-mdb-img="{{ player.url }}" class="w-100"
+                                     alt="{{ player.name }} - {{ player.qualification_rank }} - {{ player.league }} - {{ player.league_rank }}">
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-md">
+            <h4 class="mb-2 mt-2">Candidates</h4>
+        </div>
+    </div>
+    <div class="lightbox">
+        {% for player_batch in candidates|batch(6) %}
+            <div class="row">
+                {% for player in player_batch %}
+                    <div class="col-md-2 mt-2">
+                        <div class="modal-content">
+                            <div class="btn-select-wrapper">
+                                <button onclick="selectPlayer('{{ player.id }}')"
+                                        type="button" class="btn btn-lg btn-outline-success btn-floating">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body-preview">
+                                <img src="{{ player.url }}" data-mdb-img="{{ player.url }}" class="w-100"
+                                     alt="{{ player.name }} - {{ player.qualification_rank }} - {{ player.league }} - {{ player.league_rank }}">
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        selectPlayer = (playerName) => {
+            console.log(playerName)
+        }
+    </script>
+{% endblock %}
