@@ -32,10 +32,11 @@ class Group(FirestoreDocument):
         self.name: str = str()
         self.fullname: str = str()
         self.player_count: int = int()
-        self.selection: bool = bool()
         self.player_name: str = str()
         self.url: str = str()
         self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
+        self.qualification_locked: bool = bool()
+        self.qualified_player_count: int = int()
 
     def __repr__(self):
         return f"{self.name}:{self.fullname}:P#{self.player_count}"
@@ -51,6 +52,14 @@ class Group(FirestoreDocument):
     @property
     def group_rank_str(self) -> str:
         return f"{self.group_rank:05}"
+
+    @property
+    def qualified_player_count_str(self) -> str:
+        return f"{self.qualified_player_count:02}"
+
+    @property
+    def locked_str(self) -> str:
+        return "Yes" if self.qualification_locked else "No"
 
 
 Group.init()

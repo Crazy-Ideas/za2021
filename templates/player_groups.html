@@ -25,6 +25,8 @@
                 <th class="th-sm">Name</th>
                 <th class="th-sm" data-mdb-sort="false">Image</th>
                 <th class="th-sm">Players</th>
+                <th class="th-sm">Qualified</th>
+                <th class="th-sm">Locked</th>
                 <th class="th-sm">Rank</th>
                 <th class="th-sm">Average</th>
                 <th class="th-sm">Action</th>
@@ -36,10 +38,12 @@
                     <td>{{ loop.index }}</td>
                     <td>{{ group.fullname }} ({{ group.name }})</td>
                     <td>
-                        <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="100"
+                        <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="50"
                              data-mdb-toggle="modal" data-mdb-target="#imageModal" data-ci-group-id="{{ group.id }}">
                     </td>
                     <td>{{ group.player_count_str }}</td>
+                    <td>{{ group.qualified_player_count_str }}</td>
+                    <td>{{ group.locked_str }}</td>
                     <td>{{ group.group_rank_str }}</td>
                     <td>{{ group.rank_average_str }}</td>
                     <td>
@@ -56,7 +60,7 @@
 
     <!-- Section Modal -->
     <div class="modal fade" id="imageModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="btn-close-wrapper">
                     <button type="button" class="btn-modal-close btn-close" data-mdb-dismiss="modal"></button>
@@ -66,8 +70,7 @@
                         <img src="" alt="No Image" class="w-100"/>
                         <div class="modal-image-gradient"></div>
                         <div class="preview-btn-container">
-                            <a class="btn btn-primary" id="openGroupModal"
-                               href="{{ url_for('players_in_a_group', group_id='group_id_placeholder') }}">
+                            <a class="btn btn-primary" id="openGroupModal" href="#">
                                 <span id="modalGroupId" class="invisible"></span>
                                 <i class="fas fa-folder-open me-2"></i>
                                 Open
@@ -95,11 +98,13 @@
             }
         });
         document.getElementById("imageModal").addEventListener("show.bs.modal", (e) => {
-            if (e.relatedTarget.src) {
-                e.target.querySelector("img").src = e.relatedTarget.src;
+            const img = e.relatedTarget;
+            if (img.src) {
+                e.target.querySelector("img").src = img.src;
             }
-            const openButton = document.getElementById("openGroupModal")
-            openButton.href = openButton.href.replace("group_id_placeholder", e.relatedTarget.dataset.ciGroupId);
+            const openButton = document.getElementById("openGroupModal");
+            openButton.href = "{{ url_for('players_in_a_group', group_id='group_id_placeholder') }}";
+            openButton.href = openButton.href.replace("group_id_placeholder", img.dataset.ciGroupId);
         });
     </script>
 {% endblock %}
