@@ -6,7 +6,7 @@
             <h3 class="mb-2 mt-2">{{ title }}</h3>
         </div>
         <div class="col-md-3 mt-3">
-            <form id="lockForm" method="POST" class="needs-validation" novalidate>
+            <form id="lockForm" method="POST" novalidate>
                 {{ form.csrf_token() }}
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="{{ form.locked.id }}"
@@ -31,15 +31,24 @@
                 {% endfor %}
             </form>
         </div>
-        <div class="col-md-1 text-end">
-            <a href="{{ url_for('view_player_groups') }}" class="btn btn-lg btn-light btn-floating">
+        <div class="col-md-1 mt-2 text-end">
+            <a href="{{ url_for('view_player_groups') }}" class="btn btn-light btn-floating">
                 <i class="fas fa-times fa-2x"></i>
             </a>
         </div>
     </div>
     <div class="row">
-        <div class="col-md">
+        <div class="col-md-8">
             <h4 class="mb-2 mt-2">Playing IX</h4>
+        </div>
+        <div class="col-md-4">
+            <form id="removeForm" method="POST" novalidate>
+                {{ form.csrf_token() }}
+                {{ form.removed_player_id() }}
+            </form>
+            {% for error in form.removed_player_id.errors %}
+                <p class="small note note-danger">{{ error }}</p>
+            {% endfor %}
         </div>
     </div>
     <div class="lightbox">
@@ -48,12 +57,14 @@
                 {% for player in player_batch %}
                     <div class="col-md-2 mt-2">
                         <div class="modal-content">
-                            <div class="btn-select-wrapper">
-                                <button onclick="selectPlayer('{{ player.id }}')"
-                                        type="button" class="btn btn-floating btn-outline-danger">
-                                    <i class="fas fa-times fa-2x"></i>
-                                </button>
-                            </div>
+                            {% if not group.qualification_locked %}
+                                <div class="btn-select-wrapper">
+                                    <button onclick="removePlayer('{{ player.id }}')"
+                                            type="button" class="btn btn-floating btn-outline-danger">
+                                        <i class="fas fa-times fa-2x"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
                             <div class="modal-body-preview">
                                 <img src="{{ player.url }}" data-mdb-img="{{ player.url }}" class="w-100"
                                      alt="{{ player.name }} - {{ player.qualification_rank }} - {{ player.league }} - {{ player.league_rank }}">
@@ -66,8 +77,17 @@
     </div>
     <hr>
     <div class="row">
-        <div class="col-md">
+        <div class="col-md-8">
             <h4 class="mb-2 mt-2">Candidates</h4>
+        </div>
+        <div class="col-md-4">
+            <form id="addForm" method="POST" novalidate>
+                {{ form.csrf_token() }}
+                {{ form.added_player_id() }}
+            </form>
+            {% for error in form.added_player_id.errors %}
+                <p class="small note note-danger">{{ error }}</p>
+            {% endfor %}
         </div>
     </div>
     <div class="lightbox">
@@ -76,12 +96,14 @@
                 {% for player in player_batch %}
                     <div class="col-md-2 mt-2">
                         <div class="modal-content">
-                            <div class="btn-select-wrapper">
-                                <button onclick="selectPlayer('{{ player.id }}')"
-                                        type="button" class="btn btn-lg btn-outline-success btn-floating">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </div>
+                            {% if not group.qualification_locked and group.qualified_player_count < 9 %}
+                                <div class="btn-select-wrapper">
+                                    <button onclick="addPlayer('{{ player.id }}')"
+                                            type="button" class="btn btn-lg btn-outline-success btn-floating">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
                             <div class="modal-body-preview">
                                 <img src="{{ player.url }}" data-mdb-img="{{ player.url }}" class="w-100"
                                      alt="{{ player.name }} - {{ player.qualification_rank }} - {{ player.league }} - {{ player.league_rank }}">
@@ -97,9 +119,17 @@
 
 {% block scripts %}
     {{ super() }}
+    <!--suppress JSUnresolvedVariable -->
     <script>
-        selectPlayer = (playerName) => {
-            console.log(playerName)
+        removePlayer = (playerId) => {
+            const form = document.forms["removeForm"];
+            form.removed_player_id.value = playerId;
+            form.submit();
+        }
+        addPlayer = (playerId) => {
+            const form = document.forms["addForm"];
+            form.added_player_id.value = playerId;
+            form.submit();
         }
         document.getElementById("{{ form.locked.id }}").addEventListener("change", () => {
             document.forms["lockForm"].submit();

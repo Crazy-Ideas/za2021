@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, HiddenField, ValidationError, SubmitField
+from wtforms import BooleanField, HiddenField, ValidationError
 
 from models import Player, Group
 
@@ -10,7 +10,6 @@ class QualificationForm(FlaskForm):
     locked = BooleanField()
     added_player_id = HiddenField()
     removed_player_id = HiddenField()
-    submit = SubmitField()
 
     def __init__(self, group: Group, playing_ix: List[Player], candidates: List[Player], *args, **kwargs):
         super().__init__(*args, **kwargs)
