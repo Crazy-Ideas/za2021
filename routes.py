@@ -3,6 +3,7 @@ from typing import List
 from flask import render_template, redirect, url_for
 
 from app import app
+from forms import QualificationForm
 from models import Group, Player
 
 
@@ -19,7 +20,7 @@ def view_player_groups():
     return render_template("player_groups.html", title="Player Groups", groups=groups)
 
 
-@app.route("/groups/<group_id>")
+@app.route("/groups/<group_id>", methods=["GET", "POST"])
 def players_in_a_group(group_id: str):
     group: Group = Group.get_by_id(group_id)
     players: List[Player] = list()
@@ -28,7 +29,13 @@ def players_in_a_group(group_id: str):
     if not players or not group:
         return redirect(url_for("view_player_groups"))
     players.sort(key=lambda player: player.qualification_rank)
-    playingIX = [player for player in players if player.qualified]
+    playing_ix = [player for player in players if player.qualified]
     candidates = [player for player in players if not player.qualified]
-    return render_template("players_in_a_group.html", title=group.fullname, group=group, playingIX=playingIX,
-                           candidates=candidates)
+    form = QualificationForm(group, playing_ix, candidates)
+    if not form.validate_on_submit():
+        return render_template("players_in_a_group.html", title=group.fullname, group=group, playingIX=playing_ix,
+                               candidates=candidates, form=form)
+    form.group.save()
+    if form.player_to_update:
+        form.player_to_update.save()
+    return redirect(url_for("players_in_a_group", group_id=group_id))

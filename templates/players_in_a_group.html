@@ -2,10 +2,36 @@
 
 {% block app_content %}
     <div class="row">
-        <div class="col-md-9">
+        <div class="col-md-8">
             <h3 class="mb-2 mt-2">{{ title }}</h3>
         </div>
-        <div class="col-md-3 text-end">
+        <div class="col-md-3 mt-3">
+            <form id="lockForm" method="POST" class="needs-validation" novalidate>
+                {{ form.csrf_token() }}
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="{{ form.locked.id }}"
+                           name="{{ form.locked.name }}" value="y"
+                            {% if group.qualification_locked %} checked {% endif %}
+                            {% if group.qualified_player_count != 9 %} disabled {% endif %}
+                    />
+                    <label class="form-check-label" for="{{ form.locked.id }}">
+                        {% if group.qualification_locked %}
+                            Locked
+                        {% else %}
+                            {% if group.qualified_player_count == 9 %}
+                                Unlocked - Ready to Lock
+                            {% else %}
+                                Unlocked - Select exactly 9 players to lock
+                            {% endif %}
+                        {% endif %}
+                    </label>
+                </div>
+                {% for error in form.locked.errors %}
+                    <p class="small note note-danger">{{ error }}</p>
+                {% endfor %}
+            </form>
+        </div>
+        <div class="col-md-1 text-end">
             <a href="{{ url_for('view_player_groups') }}" class="btn btn-lg btn-light btn-floating">
                 <i class="fas fa-times fa-2x"></i>
             </a>
@@ -75,5 +101,8 @@
         selectPlayer = (playerName) => {
             console.log(playerName)
         }
+        document.getElementById("{{ form.locked.id }}").addEventListener("change", () => {
+            document.forms["lockForm"].submit();
+        });
     </script>
 {% endblock %}
