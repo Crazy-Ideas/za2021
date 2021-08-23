@@ -9,14 +9,14 @@
                     <div>
                         <img src="{{ url_for('static', filename='brand.png') }}" height="100" alt="Crazy Ideas"/>
                         <h2 class="mt-4 pt-1" style="font-weight: 900;">Sign in to your account</h2>
-                        <p class="text-muted mb-4 pb-1">Please contact info@crazyideas.co.in for login credentials</p>
-                        <div class="form-outline mb-2">
+                        <p class="text-muted mb-5 pb-1">Please contact info@crazyideas.co.in for login credentials</p>
+                        <div class="form-outline mb-5">
                             <input type="email" id="{{ form.email.id }}" name="{{ form.email.name }}" value=""
                                    class="form-control {% if form.email.errors %} is-invalid {% endif %}"/>
                             <label class="form-label" for="{{ form.email.id }}">Email address</label>
                             <div class="invalid-feedback">{{ form.email.errors[0] }}</div>
                         </div>
-                        <div class="form-outline mb-4">
+                        <div class="form-outline mb-5">
                             <input type="password" id="{{ form.password.id }}" name="{{ form.password.name }}" value=""
                                    class="form-control {% if form.password.errors %} is-invalid {% endif %}"/>
                             <label class="form-label" for="{{ form.password.id }}">Password</label>

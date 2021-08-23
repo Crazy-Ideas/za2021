@@ -1,0 +1,9 @@
+README.md
+LICENSE
+*.pyo
+*.pyd
+__pycache__
+venv/
+.idea/
+.git/
+.gitignore
