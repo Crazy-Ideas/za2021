@@ -5,6 +5,7 @@ charset-normalizer==2.0.4
 click==8.0.1
 firestore-ci==2020.8.15
 Flask==2.0.1
+Flask-Login==0.5.0
 Flask-WTF==0.15.1
 google-api-core==2.0.0
 google-auth==2.0.1

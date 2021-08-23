@@ -1,10 +1,30 @@
+from datetime import datetime
+from functools import wraps
 from typing import List
 
-from flask import render_template, redirect, url_for
+import pytz
+from flask import render_template, redirect, url_for, request, make_response, Response, current_app
+from flask_login import login_user, current_user, logout_user
+from werkzeug.urls import url_parse
 
-from app import app
-from forms import QualificationForm
-from models import Group, Player
+from app import app, CI_SECURITY
+from forms import QualificationForm, LoginForm
+from models import Group, Player, User
+
+
+def cookie_login_required(route_function):
+    @wraps(route_function)
+    def decorated_route(*args, **kwargs):
+        if current_user.is_authenticated:
+            return route_function(*args, **kwargs)
+        token: str = request.cookies.get("token")
+        user: User = User.objects.filter_by(token=token).first()
+        if user and user.token_expiration < datetime.now(tz=pytz.UTC):
+            login_user(user=user)
+            return route_function(*args, **kwargs)
+        return current_app.login_manager.unauthorized()
+
+    return decorated_route
 
 
 @app.route("/")
@@ -13,6 +33,7 @@ def home():
 
 
 @app.route("/groups")
+@cookie_login_required
 def view_player_groups():
     groups: List[Group] = Group.objects.get()
     groups = [group for group in groups if group.player_count > 0]
@@ -21,6 +42,7 @@ def view_player_groups():
 
 
 @app.route("/groups/<group_id>", methods=["GET", "POST"])
+@cookie_login_required
 def players_in_a_group(group_id: str):
     group: Group = Group.get_by_id(group_id)
     players: List[Player] = list()
@@ -39,3 +61,27 @@ def players_in_a_group(group_id: str):
     if form.player_to_update:
         form.player_to_update.save()
     return redirect(url_for("players_in_a_group", group_id=group_id))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if not form.validate_on_submit():
+        return render_template("login.html", form=form)
+    token = form.user.get_or_generate_token()
+    login_user(user=form.user)
+    next_page = request.args.get("next")
+    if not next_page or url_parse(next_page).netloc != str():
+        next_page = url_for("view_player_groups")
+    response: Response = make_response(redirect(next_page))
+    expiry = form.user.TOKEN_EXPIRY
+    response.set_cookie("token", token, max_age=expiry, secure=CI_SECURITY, httponly=True, samesite="Strict")
+    return response
+
+
+@app.route("/logout")
+def logout():
+    if current_user.is_authenticated:
+        current_user.revoke_token()
+        logout_user()
+    return redirect(url_for("home"))

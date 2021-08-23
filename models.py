@@ -1,7 +1,11 @@
-from datetime import datetime
+import os
+from base64 import b64encode
+from datetime import datetime, timedelta
 
 import pytz
 from firestore_ci import FirestoreDocument
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class Player(FirestoreDocument):
@@ -65,7 +69,8 @@ class Group(FirestoreDocument):
 Group.init()
 
 
-class User(FirestoreDocument):
+class User(FirestoreDocument, UserMixin):
+    TOKEN_EXPIRY = 3600  # 1 hour = 3600 seconds
 
     def __init__(self):
         super().__init__()
@@ -73,6 +78,32 @@ class User(FirestoreDocument):
         self.password_hash: str = str()
         self.token: str = str()
         self.token_expiration: datetime = datetime.now(tz=pytz.UTC)
+
+    def __repr__(self):
+        return f"{self.email}"
+
+    def get_id(self):
+        return self.email
+
+    def get_or_generate_token(self) -> str:
+        now: datetime = datetime.now(tz=pytz.UTC)
+        if self.token and self.token_expiration > now + timedelta(seconds=60):
+            return self.token
+        self.token: str = b64encode(os.urandom(24)).decode()
+        self.token_expiration: datetime = now + timedelta(seconds=self.TOKEN_EXPIRY)
+        self.save()
+        return self.token
+
+    def revoke_token(self) -> None:
+        self.token_expiration: datetime = datetime.utcnow() - timedelta(seconds=1)
+        self.save()
+
+    def set_password(self, password) -> None:
+        self.password_hash: str = generate_password_hash(password)
+        self.save()
+
+    def is_password_valid(self, password) -> bool:
+        return check_password_hash(self.password_hash, password)
 
 
 User.init()
