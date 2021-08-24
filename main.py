@@ -2,7 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from datetime import timedelta, datetime
-from typing import List
+from typing import List, Optional
 
 import pytz
 
@@ -12,13 +12,13 @@ from google.cloud.storage import Client
 from models import Player, Group
 
 
-def generate_url(player: Player) -> Player:
+def generate_url(player: Player) -> Optional[Player]:
     bucket = Client().bucket("za-2021")
     possible_filenames: List[str] = [f"images/{player.name}.{ext}" for ext in ("jpg", "jpeg", "png")]
     filename: str = next((filename for filename in possible_filenames if bucket.blob(filename).exists()), str())
     if not filename:
         print(f"{player} Storage Image does not exists.")
-        return player
+        return None
     expiration: timedelta = timedelta(days=7)
     player_with_url: Player = deepcopy(player)
     player_with_url.url = bucket.blob(filename).generate_signed_url(version="v4", expiration=expiration)
@@ -42,7 +42,8 @@ def update_url(*args, **kwargs):
                 print(f"{thread_count} of {player_count} threads created.")
         updated_players: List[Player] = list()
         for future in as_completed(threads):
-            updated_players.append(future.result())
+            if future.result():
+                updated_players.append(future.result())
             result_count: int = len(updated_players)
             if result_count in {1, player_count} or result_count % max_workers == 0:
                 print(f"{result_count} of {player_count} url generated.")

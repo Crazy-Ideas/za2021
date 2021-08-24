@@ -34,9 +34,11 @@ if __name__ == "__main__":
 def make_shell_context() -> dict:
     from main import update_url
     from models import Player
+    from upload import load_from_temp
     return {
         "User": User,
         "Group": Group,
         "Player": Player,
         "update_url": update_url,
+        "load_from_temp": load_from_temp,
     }

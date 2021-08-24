@@ -63,7 +63,7 @@ class Group(FirestoreDocument):
 
     @property
     def locked_str(self) -> str:
-        return "Yes" if self.qualification_locked else "No"
+        return "Yes" if self.qualification_locked else ("No" if self.player_count >= 9 else "Disqualified")
 
 
 Group.init()

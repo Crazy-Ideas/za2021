@@ -1,6 +1,7 @@
 venv/
 mdb/
 .idea/
+temp/
 __pycache__
 *.env
 *.csv
