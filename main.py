@@ -14,7 +14,7 @@ from models import Player, Group
 
 def generate_url(player: Player) -> Optional[Player]:
     bucket = Client().bucket("za-2021")
-    possible_filenames: List[str] = [f"images/{player.name}.{ext}" for ext in ("jpg", "jpeg", "png")]
+    possible_filenames: List[str] = [f"images/{player.name}.{ext}" for ext in ("jpg", "jpeg", "png", "webp")]
     filename: str = next((filename for filename in possible_filenames if bucket.blob(filename).exists()), str())
     if not filename:
         print(f"{player} Storage Image does not exists.")

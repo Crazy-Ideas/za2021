@@ -14,6 +14,7 @@ class Player(FirestoreDocument):
         super().__init__()
         self.name: str = str()
         self.group_name: str = str()
+        self.star_player: bool = bool()
         self.url: str = str()
         self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
         self.qualified: bool = bool()
