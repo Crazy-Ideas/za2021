@@ -29,6 +29,7 @@
                 {% for error in form.locked.errors %}
                     <p class="small note note-danger">{{ error }}</p>
                 {% endfor %}
+                {{ form.lock_status_changed(class_="invisible") }}
             </form>
         </div>
         <div class="col-md-1 mt-2 text-end">
@@ -45,6 +46,7 @@
             <form id="removeForm" method="POST" novalidate>
                 {{ form.csrf_token() }}
                 {{ form.removed_player_id() }}
+                {{ form.star_player_id }}
             </form>
             {% for error in form.removed_player_id.errors %}
                 <p class="small note note-danger">{{ error }}</p>
@@ -57,6 +59,18 @@
                 {% for player in player_batch %}
                     <div class="col-md-2 mt-2">
                         <div class="modal-content">
+                            <div class="{% if group.qualification_locked %}btn-select-wrapper{% else %}btn-star-wrapper{% endif %}">
+                                {% if player.star_player %}
+                                    <button type="button" class="btn btn-floating btn-warning" disabled>
+                                        <i class="fas fa-star fa-2x"></i>
+                                    </button>
+                                {% else %}
+                                    <button onclick="starPlayer('{{ player.id }}')"
+                                            type="button" class="btn btn-floating btn-outline-warning">
+                                        <i class="far fa-star fa-2x"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
                             {% if not group.qualification_locked %}
                                 <div class="btn-select-wrapper">
                                     <button onclick="removePlayer('{{ player.id }}')"
@@ -131,7 +145,13 @@
             form.added_player_id.value = playerId;
             form.submit();
         }
+        starPlayer = (playerId) => {
+            const form = document.forms["removeForm"];
+            form.star_player_id.value = playerId;
+            form.submit();
+        }
         document.getElementById("{{ form.locked.id }}").addEventListener("change", () => {
+            document.getElementById("{{ form.lock_status_changed.id }}").checked = true;
             document.forms["lockForm"].submit();
         });
     </script>

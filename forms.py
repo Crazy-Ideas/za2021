@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, HiddenField, ValidationError, StringField, PasswordField, SubmitField
@@ -8,17 +8,21 @@ from models import Player, Group, User
 
 class QualificationForm(FlaskForm):
     locked = BooleanField()
+    lock_status_changed = BooleanField()
     added_player_id = HiddenField()
     removed_player_id = HiddenField()
+    star_player_id = HiddenField()
 
     def __init__(self, group: Group, playing_ix: List[Player], candidates: List[Player], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.group: Group = group
         self.playing_ix: List[Player] = playing_ix
         self.candidates: List[Player] = candidates
-        self.player_to_update: Optional[Player] = None
+        self.updated_players: List[Player] = list()
 
     def validate_locked(self, locked: BooleanField):
+        if not self.lock_status_changed.data:
+            return
         if not locked.data:
             self.group.qualification_locked = False
             return
@@ -30,21 +34,41 @@ class QualificationForm(FlaskForm):
     def validate_added_player_id(self, added_player_id: HiddenField):
         if not added_player_id.data:
             return
-        self.player_to_update = next((player for player in self.candidates if player.id == added_player_id.data), None)
-        if not self.player_to_update or self.player_to_update.qualified is True:
+        player = next((player for player in self.candidates if player.id == added_player_id.data), None)
+        if not player or player.qualified is True:
             raise ValidationError("Not a valid player to add.")
-        self.player_to_update.qualified = True
+        player.qualified = True
+        self.updated_players.append(player)
         self.group.qualified_player_count += 1
         return
 
     def validate_removed_player_id(self, remove_player_id: HiddenField):
         if not remove_player_id.data:
             return
-        self.player_to_update = next((player for player in self.playing_ix if player.id == remove_player_id.data), None)
-        if not self.player_to_update or self.player_to_update.qualified is False:
+        player = next((player for player in self.playing_ix if player.id == remove_player_id.data), None)
+        if not player or player.qualified is False:
             raise ValidationError("Not a valid player to remove.")
-        self.player_to_update.qualified = False
+        player.qualified = False
+        self.updated_players.append(player)
         self.group.qualified_player_count -= 1
+        return
+
+    def validate_star_player_id(self, star_player_id: HiddenField):
+        if not star_player_id.data:
+            return
+        player = next((player for player in self.playing_ix if player.id == star_player_id.data), None)
+        if not player or player.star_player is True:
+            raise ValidationError("Not a valid player to make a star player.")
+        old_star_player = next((player for player in self.playing_ix if player.star_player), None)
+        player.star_player = True
+        self.group.player_name = player.name
+        self.group.url = player.url
+        self.group.url_expiration = player.url_expiration
+        self.updated_players.append(player)
+        if not old_star_player:
+            return
+        old_star_player.star_player = False
+        self.updated_players.append(old_star_player)
         return
 
 

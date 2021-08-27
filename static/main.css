@@ -44,6 +44,15 @@
     z-index: 1;
 }
 
+.btn-star-wrapper {
+    position: absolute;
+    display: flex;
+    padding: 0.5rem;
+    right: 60px;
+    top: 10px;
+    border-radius: 100%;
+    z-index: 1;
+}
 
 .preview-btn-container {
     position: absolute;

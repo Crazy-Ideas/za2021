@@ -38,7 +38,10 @@ def view_player_groups():
     groups: List[Group] = Group.objects.get()
     groups = [group for group in groups if group.player_count > 0]
     groups.sort(key=lambda group: group.group_rank / group.player_count)
-    return render_template("player_groups.html", title="Player Groups", groups=groups)
+    qualified: int = sum(1 for group in groups if group.qualification_locked)
+    pending: int = sum(1 for group in groups if not group.qualification_locked and group.player_count >= 9)
+    return render_template("player_groups.html", title="Player Groups", groups=groups, qualified=qualified,
+                           pending=pending)
 
 
 @app.route("/groups/<group_id>", methods=["GET", "POST"])
@@ -58,8 +61,8 @@ def players_in_a_group(group_id: str):
         return render_template("players_in_a_group.html", title=group.fullname, group=group, playingIX=playing_ix,
                                candidates=candidates, form=form)
     form.group.save()
-    if form.player_to_update:
-        form.player_to_update.save()
+    if form.updated_players:
+        Player.objects.save_all(form.updated_players)
     return redirect(url_for("players_in_a_group", group_id=group_id))
 
 
