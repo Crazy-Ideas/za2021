@@ -19,7 +19,7 @@ def cookie_login_required(route_function):
             return route_function(*args, **kwargs)
         token: str = request.cookies.get("token")
         user: User = User.objects.filter_by(token=token).first()
-        if user and user.token_expiration < datetime.now(tz=pytz.UTC):
+        if user and user.token_expiration > datetime.now(tz=pytz.UTC):
             login_user(user=user)
             return route_function(*args, **kwargs)
         return current_app.login_manager.unauthorized()
