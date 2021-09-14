@@ -92,4 +92,5 @@ class LoginForm(FlaskForm):
         user: User = User.objects.filter_by(email=self.email.data).first()
         if not user or not user.is_password_valid(password.data):
             raise ValidationError("Invalid email or password.")
+        self.user = user
         return
