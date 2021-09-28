@@ -9,8 +9,9 @@ from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import QualificationForm, LoginForm
-from methods import get_standings_with_url
+from methods import get_standings_with_url, get_round_groups
 from models import Group, Player, User, Standing
+from utils import RoundGroup
 
 
 def cookie_login_required(route_function):
@@ -72,6 +73,13 @@ def players_in_a_group(group_id: str):
 def view_standings():
     standings: List[Standing] = get_standings_with_url()
     return render_template("standings.html", standings=standings, title="Standings")
+
+
+@app.route("/rounds/weeks/<int:week>")
+@cookie_login_required
+def rounds_for_week(week: int):
+    round_groups: List[RoundGroup] = get_round_groups(week)
+    return render_template("rounds.html", round_groups=round_groups, title="Fixtures & Results")
 
 
 @app.route("/login", methods=["GET", "POST"])

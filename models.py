@@ -56,6 +56,22 @@ class Series(FirestoreDocument):
         return f"S{self.season}:O{self.order}:W{self.week}:R{self.round}:" \
                f"{self.type}:{self.group_name1}v{self.group_name2}:W={self.winner if self.winner else TBD}"
 
+    @property
+    def is_name1_winner(self) -> bool:
+        return self.winner == self.group_name1
+
+    @property
+    def is_name1_loser(self) -> bool:
+        return self.winner != self.group_name1 if self.winner else False
+
+    @property
+    def is_name2_winner(self) -> bool:
+        return self.winner == self.group_name2
+
+    @property
+    def is_name2_loser(self) -> bool:
+        return self.winner != self.group_name2 if self.winner else False
+
 
 Series.init("series")
 
@@ -65,11 +81,10 @@ class Standing(FirestoreDocument):
     def __init__(self, season: int = None, group_name: str = None):
         super().__init__()
         self.season: int = season if season else int()
-        self.group_name: str = group_name if group_name else int()
-        self.group_fullname: str = str()
+        self.group_name: str = group_name if group_name else str()
+        self.group_fullname: str = TBD
         self.player_name: str = str()
         self.url: str = str()
-        self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
         self.weekly_scores: List[int] = [int()] * 7
         self.weekly_ties: List[int] = [int()] * 7
 

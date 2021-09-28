@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">{{ title }}</h3>
+        </div>
+    </div>
+    <ul class="nav nav-tabs nav-justified mb-3" role="tablist">
+        {% for round_group in round_groups %}
+            <li class="nav-item {% if loop.index == 1 %}active{% endif %}" role="presentation">
+                <button class="nav-link" id="tab-nav-{{ loop.index }}" data-mdb-toggle="tab"
+                        data-mdb-target="#tab-pane-{{ loop.index }}" type="button" role="tab">
+                    Round {{ round_group.round_group_text }}
+                </button>
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="tab-content">
+        {% for round_group in round_groups %}
+            <div class="tab-pane fade {% if loop.index == 1 %}show active{% endif %}" id="tab-pane-{{ loop.index }}"
+                 role="tabpanel">
+                {% for round_batch in round_group.rounds|batch(4) %}
+                    <div class="row mb-3">
+                        {% for round_team in round_batch %}
+                            <div class="col-md-3">
+                                <table class="table table-sm">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col" colspan="3">Team {{ round_team.round_number }}</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for ss in round_team.series_standings %}
+                                        <tr>
+                                            <th scope="row" class="align-middle">{{ ss.series.type }}</th>
+                                            <td>
+                                                <div class="modal-body-preview">
+                                                    <img src="{{ ss.standing1.url }}"
+                                                         alt="{{ ss.standing1.group_fullname }}"
+                                                         width="150"/>
+                                                    <div class="round-image-gradient"></div>
+                                                    <div class="preview-name-container small font-weight-bold text-white">
+                                                        {% if ss.series.is_name1_winner %}
+                                                            <span class="badge bg-success ms-2">
+                                                            <i class="fas fa-sm fa-check"></i>
+                                                            </span>
+                                                        {% elif ss.series.is_name1_loser %}
+                                                            <span class="badge bg-danger ms-2">
+                                                            <i class="fas fa-sm fa-times "></i>
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning ms-2">
+                                                            <i class="fas fa-sm fa-question bg-warning"></i>
+                                                            </span>
+                                                        {% endif %}
+                                                        {{ ss.standing1.group_fullname }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="modal-body-preview">
+                                                    <img src="{{ ss.standing2.url }}"
+                                                         alt="{{ ss.standing2.group_fullname }}"
+                                                         width="150">
+                                                    <div class="round-image-gradient"></div>
+                                                    <div class="preview-name-container small font-weight-bold text-white">
+                                                        {% if ss.series.is_name2_winner %}
+                                                            <span class="badge bg-success ms-2">
+                                                            <i class="fas fa-sm fa-check"></i>
+                                                            </span>
+                                                        {% elif ss.series.is_name2_loser %}
+                                                            <span class="badge bg-danger ms-2">
+                                                            <i class="fas fa-sm fa-times "></i>
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning ms-2">
+                                                            <i class="fas fa-sm fa-question"></i>
+                                                            </span>
+                                                        {% endif %}
+                                                        {{ ss.standing2.group_fullname }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

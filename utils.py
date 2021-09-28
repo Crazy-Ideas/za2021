@@ -2,7 +2,35 @@ from typing import Tuple, List
 
 from flask_login import current_user
 
-from models import SERIES_TYPES, BYE_SERIES_TYPES, FINAL_SERIES_TYPES, Standing
+from models import SERIES_TYPES, BYE_SERIES_TYPES, FINAL_SERIES_TYPES, Standing, Series
+
+
+class RoundGroup:
+    def __init__(self, round_group_text: str):
+        self.round_group_text: str = round_group_text
+        self.rounds: List[RoundTeam] = list()
+
+    def __repr__(self):
+        return f"{self.round_group_text}:{len(self.rounds)}"
+
+
+class RoundTeam:
+    def __init__(self, round_number: int):
+        self.round_number: int = round_number
+        self.series_standings: List = list()
+
+    def __repr__(self):
+        return f"{self.round_number}:{len(self.series_standings)}"
+
+
+class SeriesStanding:
+    def __init__(self):
+        self.series: Series = Series()
+        self.standing1: Standing = Standing()
+        self.standing2: Standing = Standing()
+
+    def __repr__(self):
+        return f"{self.series}::{self.standing1}::{self.standing2}"
 
 
 def get_order(week: int, round_number: int, series_type: str) -> int:
