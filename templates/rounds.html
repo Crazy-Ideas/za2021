@@ -27,7 +27,8 @@
                                 <table class="table table-sm">
                                     <thead>
                                     <tr>
-                                        <th scope="col" colspan="3">Team {{ round_team.round_number }}</th>
+                                        <th scope="col" colspan="3" class="text-center">
+                                            Team {{ round_team.round_number }}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -42,15 +43,15 @@
                                                     <div class="round-image-gradient"></div>
                                                     <div class="preview-name-container small font-weight-bold text-white">
                                                         {% if ss.series.is_name1_winner %}
-                                                            <span class="badge bg-success ms-2">
+                                                            <span class="badge rounded-pill bg-success ms-2">
                                                             <i class="fas fa-sm fa-check"></i>
                                                             </span>
                                                         {% elif ss.series.is_name1_loser %}
-                                                            <span class="badge bg-danger ms-2">
+                                                            <span class="badge rounded-pill bg-danger ms-2">
                                                             <i class="fas fa-sm fa-times "></i>
                                                             </span>
                                                         {% else %}
-                                                            <span class="badge bg-warning ms-2">
+                                                            <span class="badge rounded-pill bg-warning ms-2">
                                                             <i class="fas fa-sm fa-question bg-warning"></i>
                                                             </span>
                                                         {% endif %}
@@ -66,15 +67,15 @@
                                                     <div class="round-image-gradient"></div>
                                                     <div class="preview-name-container small font-weight-bold text-white">
                                                         {% if ss.series.is_name2_winner %}
-                                                            <span class="badge bg-success ms-2">
+                                                            <span class="badge rounded-pill bg-success ms-2">
                                                             <i class="fas fa-sm fa-check"></i>
                                                             </span>
                                                         {% elif ss.series.is_name2_loser %}
-                                                            <span class="badge bg-danger ms-2">
+                                                            <span class="badge rounded-pill bg-danger ms-2">
                                                             <i class="fas fa-sm fa-times "></i>
                                                             </span>
                                                         {% else %}
-                                                            <span class="badge bg-warning ms-2">
+                                                            <span class="badge rounded-pill bg-warning ms-2">
                                                             <i class="fas fa-sm fa-question"></i>
                                                             </span>
                                                         {% endif %}
