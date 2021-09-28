@@ -1,11 +1,91 @@
 import os
 from base64 import b64encode
 from datetime import datetime, timedelta
+from typing import List
 
 import pytz
 from firestore_ci import FirestoreDocument
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+
+INITIAL1, INITIAL2, WINNER, LOSER, DECIDER, FINAL = "Initial 1", "Initial 2", "Winner", "Loser", "Decider", "Final"
+SERIES_TYPES = (INITIAL1, INITIAL2, WINNER, LOSER, DECIDER)
+BYE_SERIES_TYPES = (INITIAL1, WINNER, LOSER, DECIDER)
+FINAL_SERIES_TYPES = (INITIAL1, INITIAL2, WINNER, LOSER, DECIDER, FINAL)
+
+TBD = "TBD"
+
+
+class Match(FirestoreDocument):
+
+    def __init__(self):
+        super().__init__()
+        self.season: int = int()
+        self.week: int = int()
+        self.round: int = int()
+        self.type: str = str()
+        self.player1: str = TBD
+        self.player2: str = TBD
+        self.players: List[str] = [TBD, TBD]
+        self.winner: str = str()
+
+    def __repr__(self):
+        return f"S{self.season}:W{self.week}:R{self.round}:{self.type}:{self.player1}v{self.player2}" \
+               f":W={self.winner if self.winner else TBD}"
+
+
+Match.init("matches")
+
+
+class Series(FirestoreDocument):
+
+    def __init__(self, season: int = None, week: int = None, round_number: int = None, series_type: str = None,
+                 order: int = None):
+        super().__init__()
+        self.season: int = season if season else int()
+        self.week: int = week if week else int()
+        self.round: int = round_number if round_number else int()
+        self.type: str = series_type if series_type else str()
+        self.group_name1: str = TBD
+        self.group_name2: str = TBD
+        self.group_names: List[str] = [TBD, TBD]
+        self.order: int = order if order else int()
+        self.winner: str = str()
+
+    def __repr__(self):
+        return f"S{self.season}:O{self.order}:W{self.week}:R{self.round}:" \
+               f"{self.type}:{self.group_name1}v{self.group_name2}:W={self.winner if self.winner else TBD}"
+
+
+Series.init("series")
+
+
+class Standing(FirestoreDocument):
+
+    def __init__(self, season: int = None, group_name: str = None):
+        super().__init__()
+        self.season: int = season if season else int()
+        self.group_name: str = group_name if group_name else int()
+        self.group_fullname: str = str()
+        self.player_name: str = str()
+        self.url: str = str()
+        self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
+        self.weekly_scores: List[int] = [int()] * 7
+        self.weekly_ties: List[int] = [int()] * 7
+
+    def __repr__(self):
+        return f"S{self.season}:{self.group_name}:S{self.total_score}:T{self.total_ties}"
+
+    @property
+    def total_score(self) -> int:
+        return sum(self.weekly_scores)
+
+    @property
+    def total_ties(self) -> int:
+        return sum(self.weekly_ties)
+
+
+Standing.init()
 
 
 class Player(FirestoreDocument):
@@ -77,6 +157,7 @@ class User(FirestoreDocument, UserMixin):
         super().__init__()
         self.email: str = str()
         self.password_hash: str = str()
+        self.season: int = 1
         self.token: str = str()
         self.token_expiration: datetime = datetime.now(tz=pytz.UTC)
 

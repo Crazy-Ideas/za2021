@@ -2,14 +2,8 @@
 
 {% block app_content %}
     <div class="row">
-        <div class="col-md-3">
-            <h3 class="mb-2 mt-2">Player Groups</h3>
-        </div>
-        <div class="col-md-3">
-            <p class="lead mb-2 mt-2">Qualified: {{ qualified }}</p>
-        </div>
-        <div class="col-md-3">
-            <p class="lead mb-2 mt-2">Pending: {{ pending }}</p>
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">{{ title }}</h3>
         </div>
         <div class="col-md-3">
             <div class="input-group mt-2 mt-2">
@@ -27,37 +21,34 @@
         <table data-mdb>
             <thead>
             <tr>
-                <th class="th-sm">#</th>
+                <th class="th-sm">Rank</th>
                 <th class="th-sm">Name</th>
                 <th class="th-sm" data-mdb-sort="false">Image</th>
-                <th class="th-sm">Players</th>
-                <th class="th-sm">Qualified</th>
-                <th class="th-sm">Locked</th>
-                <th class="th-sm">Rank</th>
-                <th class="th-sm">Average</th>
-                <th class="th-sm">Action</th>
+                <th class="th-sm">W1</th>
+                <th class="th-sm">W2</th>
+                <th class="th-sm">W3</th>
+                <th class="th-sm">W4</th>
+                <th class="th-sm">W5</th>
+                <th class="th-sm">W6</th>
+                <th class="th-sm">W7</th>
+                <th class="th-sm">Pts</th>
+                <th class="th-sm">TB</th>
             </tr>
             </thead>
             <tbody>
-            {% for group in groups %}
+            {% for standing in standings %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td>{{ group.fullname }} ({{ group.name }})</td>
+                    <td>{{ standing.group_fullname }} ({{ standing.group_name }})</td>
                     <td>
-                        <img src="{{ group.url }}" alt="{{ group.player_name }}" class="rounded-9" height="50"
-                             data-mdb-toggle="modal" data-mdb-target="#imageModal" data-ci-group-id="{{ group.id }}">
+                        <img src="{{ standing.url }}" alt="{{ standing.player_name }}" class="rounded-9" height="50"
+                             data-mdb-toggle="modal" data-mdb-target="#imageModal" data-ci-group-id="{{ standing.id }}">
                     </td>
-                    <td>{{ group.player_count_str }}</td>
-                    <td>{{ group.qualified_player_count_str }}</td>
-                    <td>{{ group.locked_str }}</td>
-                    <td>{{ group.group_rank_str }}</td>
-                    <td>{{ group.rank_average_str }}</td>
-                    <td>
-                        <a href="{{ url_for('players_in_a_group', group_id=group.id) }}"
-                           class="btn btn-primary btn-floating btn-lg">
-                            <i class="fas fa-folder-open"></i>
-                        </a>
-                    </td>
+                    {% for weekly_score in standing.weekly_scores %}
+                        <td>{{ weekly_score }}</td>
+                    {% endfor %}
+                    <td>{{ standing.total_score }}</td>
+                    <td>{{ standing.total_ties }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -75,18 +66,19 @@
                     <div class="modal-body-preview">
                         <img src="" alt="No Image" class="w-100"/>
                         <div class="modal-image-gradient"></div>
-                        <div class="preview-btn-container">
-                            <a class="btn btn-primary" id="openGroupModal" href="#">
-                                <span id="modalGroupId" class="invisible"></span>
-                                <i class="fas fa-folder-open me-2"></i>
-                                Open
-                            </a>
-                        </div>
+                        {#                        <div class="preview-btn-container">#}
+                        {#                            <a class="btn btn-primary" id="openGroupModal" href="#">#}
+                        {#                                <span id="modalGroupId" class="invisible"></span>#}
+                        {#                                <i class="fas fa-folder-open me-2"></i>#}
+                        {#                                Open#}
+                        {#                            </a>#}
+                        {#                        </div>#}
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -108,9 +100,9 @@
             if (img.src) {
                 e.target.querySelector("img").src = img.src;
             }
-            const openButton = document.getElementById("openGroupModal");
-            openButton.href = "{{ url_for('players_in_a_group', group_id='group_id_placeholder') }}";
-            openButton.href = openButton.href.replace("group_id_placeholder", img.dataset.ciGroupId);
+            {#const openButton = document.getElementById("openGroupModal");#}
+            {#openButton.href = "{{ url_for('players_in_a_group', group_id='group_id_placeholder') }}";#}
+            {#openButton.href = openButton.href.replace("group_id_placeholder", img.dataset.ciGroupId);#}
         });
     </script>
 {% endblock %}

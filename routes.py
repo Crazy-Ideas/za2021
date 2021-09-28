@@ -9,7 +9,8 @@ from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import QualificationForm, LoginForm
-from models import Group, Player, User
+from methods import get_standings_with_url
+from models import Group, Player, User, Standing
 
 
 def cookie_login_required(route_function):
@@ -64,6 +65,13 @@ def players_in_a_group(group_id: str):
     if form.updated_players:
         Player.objects.save_all(form.updated_players)
     return redirect(url_for("players_in_a_group", group_id=group_id))
+
+
+@app.route("/standings")
+@cookie_login_required
+def view_standings():
+    standings: List[Standing] = get_standings_with_url()
+    return render_template("standings.html", standings=standings, title="Standings")
 
 
 @app.route("/login", methods=["GET", "POST"])

@@ -32,13 +32,20 @@ if __name__ == "__main__":
 
 @app.shell_context_processor
 def make_shell_context() -> dict:
+    import methods
     from main import update_url
-    from models import Player
+    from models import Player, Group, Series, Standing, Match, INITIAL1, INITIAL2
     from upload import load_from_temp
     return {
         "User": User,
         "Group": Group,
         "Player": Player,
+        "Series": Series,
+        "Standing": Standing,
+        "Match": Match,
         "update_url": update_url,
         "load_from_temp": load_from_temp,
+        "methods": methods,
+        "INITIAL1": INITIAL1,
+        "INITIAL2": INITIAL2,
     }
