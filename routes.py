@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import wraps
-from typing import List
+from typing import List, Tuple
 
 import pytz
 from flask import render_template, redirect, url_for, request, make_response, Response, current_app
@@ -73,7 +73,8 @@ def players_in_a_group(group_id: str):
 @cookie_login_required
 def view_standings():
     standings: List[Standing] = get_standings_with_url()
-    return render_template("standings.html", standings=standings, title="Standings")
+    ranked_standings: List[Tuple[int, Standing]] = [(index + 1, standing) for index, standing in enumerate(standings)]
+    return render_template("standings.html", standings=standings, title="Standings", ranked_standings=ranked_standings)
 
 
 @app.route("/rounds")
