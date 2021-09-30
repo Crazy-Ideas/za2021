@@ -125,7 +125,7 @@ def get_match_player(match: Match, players: List[Player]) -> MatchPlayer:
     match_player = MatchPlayer()
     match_player.match = match
     match_player.player1 = next(player for player in players if player.name == match.player1)
-    match_player.player2 = next(player for player in players if player.name == match.player1)
+    match_player.player2 = next(player for player in players if player.name == match.player2)
     return match_player
 
 
