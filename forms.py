@@ -72,6 +72,10 @@ class QualificationForm(FlaskForm):
         return
 
 
+class PlayForm(FlaskForm):
+    winner = HiddenField()
+
+
 class LoginForm(FlaskForm):
     email = StringField("Email")
     password = PasswordField("Password")

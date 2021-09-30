@@ -118,9 +118,7 @@ def get_standings_with_url() -> List[Standing]:
         if not group:
             continue
         standing.url = group.url
-        standing.player_name = group.player_name
-        standing.url_expiration = group.url_expiration
-        standing.group_fullname = group.fullname
+        standing.url_name = group.player_name
     return standings
 
 
@@ -204,17 +202,20 @@ def update_results(series: Series, match_group: MatchGroup, winning_name: str) -
     update_tbd(series)
     standing.save()
     match_group.current_match.match.save()
+    if series.winner and series.round == 601 and series.type == DECIDER:
+        setup_initial_matches()
     return
 
 
 def update_score(series: Series, standing: Standing) -> None:
     if series.week > 7:
         return
-    standing.weekly_ties[series.week - 1] += 1
+    index = series.week - 1
+    standing.weekly_ties[index] += 1
     if series.winner:
-        standing.weekly_scores[series.week - 1] += 1
+        standing.weekly_scores[index] += 1
         if series.type == WINNER:
-            standing.weekly_ties[series.week - 1] += 10
+            standing.weekly_ties[index] += 10
     return
 
 

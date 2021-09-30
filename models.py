@@ -82,11 +82,11 @@ class Series(FirestoreDocument):
 
     def set_group_name1(self, group_name) -> None:
         self.group_name1 = group_name
-        self.group_names.append(group_name)
+        self.group_names[0] = group_name
 
     def set_group_name2(self, group_name) -> None:
         self.group_name2 = group_name
-        self.group_names.append(group_name)
+        self.group_names[1] = group_name
 
 
 Series.init("series")
@@ -99,7 +99,7 @@ class Standing(FirestoreDocument):
         self.season: int = season if season else int()
         self.group_name: str = group_name if group_name else str()
         self.group_fullname: str = TBD
-        self.player_name: str = str()
+        self.url_name: str = str()
         self.url: str = str()
         self.weekly_scores: List[int] = [int()] * 7
         self.weekly_ties: List[int] = [int()] * 7

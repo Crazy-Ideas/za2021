@@ -41,7 +41,7 @@
                     <td>{{ loop.index }}</td>
                     <td>{{ standing.group_fullname }} ({{ standing.group_name }})</td>
                     <td>
-                        <img src="{{ standing.url }}" alt="{{ standing.player_name }}" class="rounded-9" height="50"
+                        <img src="{{ standing.url }}" alt="{{ standing.url_name }}" class="rounded-9" height="50"
                              data-mdb-toggle="modal" data-mdb-target="#imageModal" data-ci-group-id="{{ standing.id }}">
                     </td>
                     {% for weekly_score in standing.weekly_scores %}
