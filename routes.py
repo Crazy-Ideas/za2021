@@ -9,9 +9,9 @@ from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import QualificationForm, LoginForm
-from methods import get_standings_with_url, get_round_groups
-from models import Group, Player, User, Standing
-from utils import RoundGroup
+from methods import get_standings_with_url, get_round_groups, get_next_series
+from models import Group, Player, User, Standing, Series
+from utils import RoundGroup, get_season
 
 
 def cookie_login_required(route_function):
@@ -75,11 +75,22 @@ def view_standings():
     return render_template("standings.html", standings=standings, title="Standings")
 
 
-@app.route("/rounds/weeks/<int:week>")
+@app.route("/rounds")
 @cookie_login_required
-def rounds_for_week(week: int):
-    round_groups: List[RoundGroup] = get_round_groups(week)
-    return render_template("rounds.html", round_groups=round_groups, title="Fixtures & Results")
+def view_rounds():
+    series: Series = get_next_series()
+    if not series:
+        return render_template("not_found_404.html")
+    return redirect(url_for("rounds_for_week", season=series.season, week=series.week))
+
+
+@app.route("/rounds/seasons/<int:season>/weeks/<int:week>")
+@cookie_login_required
+def rounds_for_week(season: int, week: int):
+    if not 1 <= season <= get_season() or not 1 <= week <= 8:
+        return render_template("not_found_404.html")
+    round_groups: List[RoundGroup] = get_round_groups(season, week)
+    return render_template("rounds.html", round_groups=round_groups, current_week=week, title="Fixtures & Results")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -104,3 +115,8 @@ def logout():
         current_user.revoke_token()
         logout_user()
     return redirect(url_for("home"))
+
+
+@app.errorhandler(404)
+def not_found(_):
+    return render_template("not_found_404.html")

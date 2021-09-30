@@ -1,8 +1,42 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from flask_login import current_user
 
-from models import SERIES_TYPES, BYE_SERIES_TYPES, FINAL_SERIES_TYPES, Standing, Series
+from models import SERIES_TYPES, BYE_SERIES_TYPES, FINAL_SERIES_TYPES, Standing, Series, Match, Player, WINNER, \
+    DECIDER, INITIAL1, INITIAL2, FINAL
+
+
+class MatchGroup:
+    def __init__(self):
+        self.past_matches: List[MatchPlayer] = list()
+        self.current_match: MatchPlayer = MatchPlayer()
+        self.standing1: Standing = Standing()
+        self.standing2: Standing = Standing()
+
+    def __repr__(self):
+        return f"PMC={len(self.past_matches)}, CM={self.current_match}"
+
+    @property
+    def winner_standing(self) -> Optional[Standing]:
+        if not self.current_match.match.winner:
+            return None
+        return self.standing1 if self.current_match.winner_group_name == self.standing1.group_name else self.standing2
+
+
+class MatchPlayer:
+    def __init__(self):
+        self.match: Match = Match()
+        self.player1: Player = Player()
+        self.player2: Player = Player()
+
+    def __repr__(self):
+        return f"{self.match}"
+
+    @property
+    def winner_group_name(self) -> str:
+        if not self.match.winner:
+            return str()
+        return self.player1.group_name if self.match.winner == self.player1.name else self.player2.group_name
 
 
 class RoundGroup:
@@ -76,12 +110,76 @@ def get_list_of_rounds(week: int) -> List[int]:
 
 
 def get_total_round_team(number: int) -> int:
-    return 2 ** (6 - get_round_group_from_round(number) // 100)
+    return 2 ** (6 - round_down(number, 100) // 100)
 
 
-def get_round_group_from_round(number: int) -> int:
-    return number - number % 100
+def round_down(number: int, factor: int) -> int:
+    return number - number % factor
 
 
 def sort_standings(standings: List[Standing]) -> List[Standing]:
     return sorted(standings, key=lambda standing: (-standing.total_score, -standing.total_ties))
+
+
+def get_match_player(match: Match, players: List[Player]) -> MatchPlayer:
+    match_player = MatchPlayer()
+    match_player.match = match
+    match_player.player1 = next(player for player in players if player.name == match.player1)
+    match_player.player2 = next(player for player in players if player.name == match.player1)
+    return match_player
+
+
+def get_tbd_series_to_update(series: Series, series_types: List[str]) -> List[Series]:
+    tbd_series: List[Series] = Series.objects.filter_by(season=series.season, week=series.week, round=series.round) \
+        .filter("type", Series.objects.IN, series_types).get()
+    tbd_series.sort(key=lambda item: FINAL_SERIES_TYPES.index(item.type))
+    return tbd_series
+
+
+def get_next_round_series_to_update(series: Series) -> Series:
+    return Series.objects.filter_by(season=series.season, week=series.week, round=get_next_round(series),
+                                    type=get_next_series_type(series)).first()
+
+
+def get_next_round(series: Series) -> int:
+    next_round_group: int = round_down(series.round, 100) + 100
+    current_round_team_number: int = series.round % 100
+    if series.week <= 7:
+        next_round_total_count: int = get_total_round_team(series.round) // 2
+        if series.type == WINNER:
+            next_round_team_number = current_round_team_number
+            if next_round_team_number > next_round_total_count:
+                next_round_team_number -= next_round_total_count
+        else:  # Series type is DECIDER:
+            next_round_team_number = next_round_total_count + 1 - current_round_team_number
+            if next_round_team_number <= 0:
+                next_round_team_number += next_round_total_count
+        return next_round_group + next_round_team_number
+    # Playoff is Week 8
+    if series.type in (WINNER, DECIDER) and series.round >= 200:
+        return series.round
+    if next_round_group == 300:
+        return next_round_group
+    # Next round group is 200 - Use the face value of ten
+    return next_round_group + round_down(current_round_team_number, 10)
+
+
+def get_next_series_type(series: Series) -> str:
+    next_round_total_count: int = get_total_round_team(series.round) // 2
+    current_round_team_number: int = series.round % 100
+    if series.week <= 7:
+        if series.type == WINNER:
+            return INITIAL1 if current_round_team_number <= next_round_total_count else INITIAL2
+        # Series type is DECIDER
+        return INITIAL2 if current_round_team_number <= next_round_total_count else INITIAL1
+    # Playoff is week 8
+    if series.round >= 200:
+        if series.type in (WINNER, DECIDER):
+            return FINAL
+        # Series type is FINAL
+        return INITIAL1 if round_down(current_round_team_number, 10) in (10, 20) else INITIAL2
+    # Playoff for going to round 200+
+    if series.type == WINNER:
+        return INITIAL1 if series.round % 2 == 1 else INITIAL2
+    # Series type is DECIDER
+    return INITIAL2 if series.round % 2 == 1 else INITIAL1

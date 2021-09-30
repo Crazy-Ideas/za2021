@@ -1,12 +1,13 @@
 from itertools import groupby
-from random import shuffle
-from typing import List
+from random import shuffle, choice
+from typing import List, Tuple
 
 from flask import url_for
 
-from models import Standing, Group, Series, INITIAL2, INITIAL1, DECIDER, TBD, WINNER, LOSER
+from models import Standing, Group, Series, INITIAL2, INITIAL1, DECIDER, TBD, WINNER, LOSER, Match, Player, FINAL
 from utils import get_order, get_season, get_series_types, get_range_of_week, get_list_of_rounds, sort_standings, \
-    RoundGroup, get_round_group_from_round, RoundTeam, SeriesStanding
+    RoundGroup, round_down, RoundTeam, SeriesStanding, MatchGroup, get_match_player, \
+    get_tbd_series_to_update, get_next_round_series_to_update
 
 
 def init_standings():
@@ -123,8 +124,7 @@ def get_standings_with_url() -> List[Standing]:
     return standings
 
 
-def get_round_groups(week: int) -> List[RoundGroup]:
-    season = get_season()
+def get_round_groups(season: int, week: int) -> List[RoundGroup]:
     week_series: List[Series] = Series.objects.filter_by(season=season, week=week).get()
     week_series.sort(key=lambda item: item.order)
     round_group_range: range = range(1, 6) if week < 8 else range(1, 3)
@@ -134,7 +134,7 @@ def get_round_groups(week: int) -> List[RoundGroup]:
                                       RoundGroup(f"{index} & {index + 1}") for index in round_group_range]
     standings: List[Standing] = get_standings_with_url()
     for round_number, round_series in groupby(week_series, key=lambda item: item.round):
-        round_group_number: int = get_round_group_from_round(round_number) // 100
+        round_group_number: int = round_down(round_number, 100) // 100
         if round_group_number > round_group_count:
             round_group_number: int = round_group_last
         round_team: RoundTeam = RoundTeam(round_number)
@@ -152,3 +152,117 @@ def get_round_groups(week: int) -> List[RoundGroup]:
             else:
                 series_standing.standing2.url = url_for("static", filename="default.jpg")
     return round_groups
+
+
+def get_match_group(series: Series) -> MatchGroup:
+    match_group = MatchGroup()
+    matches: List[Match] = Match.objects.filter_by(season=series.season, week=series.week, type=series.type,
+                                                   round=series.round).get()
+    players: List[Player] = Player.objects.filter("group_name", Player.objects.IN, series.group_names) \
+        .filter_by(qualified=True).get()
+    standings: List[Standing] = Standing.objects.filter_by(season=series.season) \
+        .filter("group_name", Series.objects.IN, series.group_names).get()
+    past_matches: List[Match] = [match for match in matches if match.winner != str()]
+    match_group.past_matches = [get_match_player(match, players) for match in past_matches]
+    current_match: Match = next((match for match in matches if match.winner == str()), None)
+    if not current_match:
+        current_match = Match(series.season, series.week, series.round, series.type)
+        if series.week in (1, 3, 5, 7, 8):
+            player1_choices: List[str] = [player.name for player in players if player.group_name == series.group_name1
+                                          and not any(match.winner == player.name for match in past_matches)]
+            player2_choices: List[str] = [player.name for player in players if player.group_name == series.group_name2
+                                          and not any(match.winner == player.name for match in past_matches)]
+        else:
+            player1_choices: List[str] = [player.name for player in players if player.group_name == series.group_name1
+                                          and not any(match.loser == player.name for match in past_matches)]
+            player2_choices: List[str] = [player.name for player in players if player.group_name == series.group_name2
+                                          and not any(match.loser == player.name for match in past_matches)]
+        current_match.player1 = choice(player1_choices)
+        current_match.player2 = choice(player2_choices)
+        current_match.players = [current_match.player1, current_match.player2]
+        current_match.create()
+    match_group.current_match = get_match_player(current_match, players)
+    match_group.standing1 = next(item for item in standings if item.group_name == series.group_name1)
+    match_group.standing2 = next(item for item in standings if item.group_name == series.group_name2)
+    return match_group
+
+
+def get_series_score(series: Series, match_group: MatchGroup) -> Tuple[int, int]:
+    score1: int = sum(1 for m_player in match_group.past_matches if m_player.winner_group_name == series.group_name1)
+    score2: int = sum(1 for m_player in match_group.past_matches if m_player.winner_group_name == series.group_name2)
+    return score1, score2
+
+
+def update_results(series: Series, match_group: MatchGroup, winning_name: str) -> None:
+    match_group.current_match.match.winner = winning_name
+    match_group.past_matches.append(match_group.current_match)
+    scores = get_series_score(series, match_group)
+    standing: Standing = match_group.winner_standing
+    if max(scores) == 5:
+        series.winner = standing.group_name
+    update_score(series, standing)
+    update_tbd(series)
+    standing.save()
+    match_group.current_match.match.save()
+    return
+
+
+def update_score(series: Series, standing: Standing) -> None:
+    if series.week > 7:
+        return
+    standing.weekly_ties[series.week - 1] += 1
+    if series.winner:
+        standing.weekly_scores[series.week - 1] += 1
+        if series.type == WINNER:
+            standing.weekly_ties[series.week - 1] += 10
+    return
+
+
+def update_tbd(series):
+    series_to_update: List[Series] = [series] if series.winner else list()
+    if series.round == 601 and series.type in (WINNER, DECIDER) or series.round == 300 and series.type == FINAL:
+        return
+    if series.type == INITIAL1:
+        tbd_series: List[Series] = get_tbd_series_to_update(series, [WINNER, LOSER])
+        tbd_series[0].set_group_name1(series.winner)
+        tbd_series[1].set_group_name1(series.loser)
+        series_to_update.extend(tbd_series)
+    elif series.type == INITIAL2:
+        tbd_series: List[Series] = get_tbd_series_to_update(series, [WINNER, LOSER])
+        tbd_series[0].set_group_name2(series.winner)
+        tbd_series[1].set_group_name2(series.loser)
+        series_to_update.extend(tbd_series)
+    elif series.type == WINNER:
+        next_series: Series = get_next_round_series_to_update(series)
+        decider: Series = get_tbd_series_to_update(series, [DECIDER])[0]
+        next_series.set_group_name1(series.winner)
+        decider.set_group_name1(series.loser)
+        series_to_update.extend([decider, next_series])
+    elif series.type == LOSER:
+        decider: Series = get_tbd_series_to_update(series, [DECIDER])[0]
+        decider.set_group_name2(series.winner)
+        series_to_update.append(decider)
+    elif series.type == DECIDER:
+        next_series: Series = get_next_round_series_to_update(series)
+        next_series.set_group_name2(series.winner)
+        series_to_update.append(next_series)
+    else:  # Series type is final
+        next_series: Series = get_next_round_series_to_update(series)
+        if series.round in (210, 230):
+            next_series.set_group_name1(series.winner)
+        else:  # Series round is 220 or 240
+            next_series.set_group_name1(series.winner)
+        series_to_update.append(next_series)
+    Series.objects.save_all(series_to_update)
+    return
+
+# def test_tbd():
+#     tbd_series = Series.objects.filter_by(season=1, week=8)\
+#         .filter("type", Series.objects.IN, [WINNER, DECIDER, FINAL]).get()
+#     tbd_series.sort(key=lambda item: item.order)
+#     tbd_series = tbd_series[:-3]
+#     results = [(get_next_round(series), get_next_series_type(series), series) for series in tbd_series]
+#     results.sort(key=itemgetter(1))
+#     results.sort(key=itemgetter(0))
+#     for data in results:
+#         print(f"{data[0]:5} {data[1]:10} {data[2]}")

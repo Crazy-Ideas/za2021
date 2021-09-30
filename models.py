@@ -18,12 +18,12 @@ TBD = "TBD"
 
 class Match(FirestoreDocument):
 
-    def __init__(self):
+    def __init__(self, season: int = None, week: int = None, round_number: int = None, series_type: str = None):
         super().__init__()
-        self.season: int = int()
-        self.week: int = int()
-        self.round: int = int()
-        self.type: str = str()
+        self.season: int = season if season else int()
+        self.week: int = week if week else int()
+        self.round: int = round_number if round_number else int()
+        self.type: str = series_type if series_type else str()
         self.player1: str = TBD
         self.player2: str = TBD
         self.players: List[str] = [TBD, TBD]
@@ -32,6 +32,10 @@ class Match(FirestoreDocument):
     def __repr__(self):
         return f"S{self.season}:W{self.week}:R{self.round}:{self.type}:{self.player1}v{self.player2}" \
                f":W={self.winner if self.winner else TBD}"
+
+    @property
+    def loser(self) -> str:
+        return next(player for player in self.players if player != self.winner) if self.winner else str()
 
 
 Match.init("matches")
@@ -57,6 +61,10 @@ class Series(FirestoreDocument):
                f"{self.type}:{self.group_name1}v{self.group_name2}:W={self.winner if self.winner else TBD}"
 
     @property
+    def loser(self) -> str:
+        return next(name for name in self.group_names if name != self.winner) if self.winner else str()
+
+    @property
     def is_name1_winner(self) -> bool:
         return self.winner == self.group_name1
 
@@ -71,6 +79,14 @@ class Series(FirestoreDocument):
     @property
     def is_name2_loser(self) -> bool:
         return self.winner != self.group_name2 if self.winner else False
+
+    def set_group_name1(self, group_name) -> None:
+        self.group_name1 = group_name
+        self.group_names.append(group_name)
+
+    def set_group_name2(self, group_name) -> None:
+        self.group_name2 = group_name
+        self.group_names.append(group_name)
 
 
 Series.init("series")
