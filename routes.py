@@ -9,8 +9,7 @@ from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import QualificationForm, LoginForm, PlayForm
-from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, get_series_score, \
-    update_results
+from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results
 from models import Group, Player, User, Standing, Series
 from utils import RoundGroup, get_season, MatchGroup
 
@@ -93,10 +92,9 @@ def play():
     if not series:
         return render_template("not_found_404.html")
     match_group: MatchGroup = get_match_group(series)
-    form = PlayForm()
-    score = get_series_score(series, match_group)
+    form = PlayForm(match_group)
     if not form.validate_on_submit():
-        return render_template("play.html", form=form, match_group=match_group, scores=score, title="Match")
+        return render_template("play.html", form=form, match_group=match_group, series=series, title="Play")
     update_results(series, match_group, form.winner.data)
     return redirect(url_for("play"))
 
@@ -108,6 +106,16 @@ def rounds_for_week(season: int, week: int):
         return render_template("not_found_404.html")
     round_groups: List[RoundGroup] = get_round_groups(season, week)
     return render_template("rounds.html", round_groups=round_groups, current_week=week, title="Fixtures & Results")
+
+
+@app.route("/series/<series_id>")
+@cookie_login_required
+def view_series(series_id: str):
+    series: Series = Series.get_by_id(series_id)
+    if not series or not series.is_setup_done:
+        return render_template("not_found_404.html")
+    match_group: MatchGroup = get_match_group(series)
+    return render_template("series.html", series=series, match_group=match_group, title="Series")
 
 
 @app.route("/login", methods=["GET", "POST"])

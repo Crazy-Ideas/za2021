@@ -28,6 +28,7 @@ class Match(FirestoreDocument):
         self.player2: str = TBD
         self.players: List[str] = [TBD, TBD]
         self.winner: str = str()
+        self.order: int = int()
 
     def __repr__(self):
         return f"S{self.season}:W{self.week}:R{self.round}:{self.type}:{self.player1}v{self.player2}" \
@@ -50,11 +51,12 @@ class Series(FirestoreDocument):
         self.week: int = week if week else int()
         self.round: int = round_number if round_number else int()
         self.type: str = series_type if series_type else str()
+        self.order: int = order if order else int()
         self.group_name1: str = TBD
         self.group_name2: str = TBD
         self.group_names: List[str] = [TBD, TBD]
-        self.order: int = order if order else int()
         self.winner: str = str()
+        self.scores: List[int] = [0, 0]
 
     def __repr__(self):
         return f"S{self.season}:O{self.order}:W{self.week}:R{self.round}:" \
@@ -79,6 +81,10 @@ class Series(FirestoreDocument):
     @property
     def is_name2_loser(self) -> bool:
         return self.winner != self.group_name2 if self.winner else False
+
+    @property
+    def is_setup_done(self) -> bool:
+        return "TBD" not in self.group_names
 
     def set_group_name1(self, group_name) -> None:
         self.group_name1 = group_name

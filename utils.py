@@ -22,6 +22,12 @@ class MatchGroup:
             return None
         return self.standing1 if self.current_match.winner_group_name == self.standing1.group_name else self.standing2
 
+    def won_count(self, name: str) -> int:
+        return sum(1 for match_player in self.past_matches if match_player.match.winner == name)
+
+    def lost_count(self, name: str) -> int:
+        return sum(1 for match_player in self.past_matches if match_player.match.loser == name)
+
 
 class MatchPlayer:
     def __init__(self):
@@ -183,3 +189,13 @@ def get_next_series_type(series: Series) -> str:
         return INITIAL1 if series.round % 2 == 1 else INITIAL2
     # Series type is DECIDER
     return INITIAL2 if series.round % 2 == 1 else INITIAL1
+
+
+def get_conquest_names(players: List[Player], match_group: MatchGroup, group_name: str) -> List[str]:
+    return [player.name for player in players if player.group_name == group_name
+            and match_group.won_count(player.name) == 0 and match_group.lost_count(player.name) < 2]
+
+
+def get_lhs_names(players: List[Player], match_group: MatchGroup, group_name: str) -> List[str]:
+    return [player.name for player in players if player.group_name == group_name
+            and match_group.lost_count(player.name) == 0 and match_group.won_count(player.name) < 2]

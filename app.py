@@ -34,7 +34,7 @@ if __name__ == "__main__":
 def make_shell_context() -> dict:
     import methods
     from main import update_url
-    from models import Player, Group, Series, Standing, Match, INITIAL1, INITIAL2
+    from models import Player, Group, Series, Standing, Match, FINAL_SERIES_TYPES
     from upload import load_from_temp
     return {
         "User": User,
@@ -46,6 +46,5 @@ def make_shell_context() -> dict:
         "update_url": update_url,
         "load_from_temp": load_from_temp,
         "methods": methods,
-        "INITIAL1": INITIAL1,
-        "INITIAL2": INITIAL2,
+        "FINAL_SERIES_TYPES": FINAL_SERIES_TYPES,
     }

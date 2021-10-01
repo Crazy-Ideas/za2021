@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% macro render_player(match, player) %}
+    <div class="modal-body-preview">
+        <img src="{{ player.url }}" class="img-fluid"
+             alt="Match {{ match.order }} - {{ player.name }} - {% if match.winner == player.name %}Winner{% elif match.loser == player.name %}Loser{% else %}TBD{% endif %}"
+             data-mdb-img="{{ player.url }}">
+        <div class="round-image-gradient"></div>
+        <div class="preview-name-container small font-weight-bold text-white">
+            {% if match.winner == player.name %}
+                <span class="badge rounded-pill bg-success ms-2"><i class="fas fa-sm fa-check"></i></span>
+            {% elif match.loser == player.name %}
+                <span class="badge rounded-pill bg-danger ms-2"><i class="fas fa-sm fa-times "></i></span>
+            {% else %}
+                <span class="badge rounded-pill bg-warning ms-2"><i class="fas fa-sm fa-question "></i></span>
+            {% endif %}
+            Match {{ match.order }} - {{ player.name }}
+        </div>
+    </div>
+{% endmacro %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">
+                Week {{ series.week }} -
+                Team {{ series.round }} -
+                {{ series.type }} -
+                {{ match_group.standing1.group_fullname }}
+                ({{ match_group.standing1.total_score }}.{{ match_group.standing1.total_ties }})
+                v {{ match_group.standing2.group_fullname }}
+                ({{ match_group.standing2.total_score }}.{{ match_group.standing2.total_ties }})
+            </h3>
+        </div>
+        <div class="col-md-3">
+            <h2 class="mb-1 mt-1 text-center">
+                {{ series.scores[0] }} - {{ series.scores[1] }}
+            </h2>
+        </div>
+    </div>
+    {% if match_group.past_matches %}
+        <div class="lightbox">
+            {% for mp_batch in match_group.past_matches|batch(3) %}
+                <div class="row mt-2 mx-2">
+                    {% for mp in mp_batch %}
+                        <div class="col-md-2">{{ render_player(mp.match, mp.player1) }}</div>
+                        <div class="col-md-2">{{ render_player(mp.match, mp.player2) }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            {% if match_group.current_match %}
+                <h4 class="mb-2 mt-2">Current Match</h4>
+                <div class="row mt-2 mx-2">
+                    <div class="col-md-2">{{ render_player(match_group.current_match.match, match_group.current_match.player1) }}</div>
+                    <div class="col-md-2">{{ render_player(match_group.current_match.match, match_group.current_match.player2) }}</div>
+                </div>
+            {% endif %}
+        </div>
+    {% elif match_group.current_match %}
+        <h4 class="mb-2 mt-2">Current Match</h4>
+        <div class="lightbox">
+            <div class="row mt-2 mx-2">
+                <div class="col-md-2">{{ render_player(match_group.current_match.match, match_group.current_match.player1) }}</div>
+                <div class="col-md-2">{{ render_player(match_group.current_match.match, match_group.current_match.player2) }}</div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-center small">Matches have not yet been played</p>
+    {% endif %}
+{% endblock %}

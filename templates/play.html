@@ -1,9 +1,31 @@
 {% extends "base.html" %}
 
+{% macro render_player(match, player) %}
+    <div class="modal-body-preview">
+        <img src="{{ player.url }}" class="img-fluid"
+             alt="Match {{ match.order }} - {{ player.name }} - {% if match.winner == player.name %}Winner{% elif match.loser == player.name %}Loser{% else %}TBD{% endif %}"
+             data-mdb-img="{{ player.url }}">
+        <div class="round-image-gradient"></div>
+        <div class="preview-name-container small font-weight-bold text-white">
+            {% if match.winner == player.name %}
+                <span class="badge rounded-pill bg-success ms-2"><i class="fas fa-sm fa-check"></i></span>
+            {% elif match.loser == player.name %}
+                <span class="badge rounded-pill bg-danger ms-2"><i class="fas fa-sm fa-times "></i></span>
+            {% else %}
+                <span class="badge rounded-pill bg-warning ms-2"><i class="fas fa-sm fa-question "></i></span>
+            {% endif %}
+            {{ match.order }}.{{ player.name }}
+        </div>
+    </div>
+{% endmacro %}
+
 {% block app_content %}
     <div class="row">
         <div class="col-md-9">
             <h3 class="mb-2 mt-2">
+                Week {{ series.week }} -
+                Team {{ series.round }} -
+                {{ series.type }} -
                 {{ match_group.standing1.group_fullname }}
                 ({{ match_group.standing1.total_score }}.{{ match_group.standing1.total_ties }})
                 v {{ match_group.standing2.group_fullname }}
@@ -12,22 +34,23 @@
         </div>
         <div class="col-md-3">
             <h2 class="mb-1 mt-1 text-center">
-                {{ scores[0] }} - {{ scores[1] }}
+                {{ series.scores[0] }} - {{ series.scores[1] }}
             </h2>
         </div>
     </div>
     <form id="selectForm" method="POST" novalidate>
         {{ form.csrf_token() }}
         {{ form.winner }}
+        {{ form.loser }}
     </form>
     <div class="row mt-2">
         <div class="col-md-10">
-            <div class="lightbox">
+            <div class="lightbox" data-mdb-zoom-level="1.5">
                 <div class="row">
                     <div class="col-md">
                         <div class="modal-content">
                             <div class="btn-select-wrapper">
-                                <button onclick="selectPlayer('{{ match_group.current_match.match.player1 }}')"
+                                <button onclick="selectPlayer('{{ match_group.current_match.match.player1 }}', '{{ match_group.current_match.match.player2 }}')"
                                         type="button" class="btn btn-lg btn-success btn-floating">
                                     <i class="fas fa-check"></i>
                                 </button>
@@ -43,7 +66,7 @@
                     <div class="col-md">
                         <div class="modal-content">
                             <div class="btn-select-wrapper">
-                                <button onclick="selectPlayer('{{ match_group.current_match.match.player2 }}')"
+                                <button onclick="selectPlayer('{{ match_group.current_match.match.player2 }}', '{{ match_group.current_match.match.player1 }}')"
                                         type="button" class="btn btn-lg btn-success btn-floating">
                                     <i class="fas fa-check"></i>
                                 </button>
@@ -65,42 +88,10 @@
                     {% for mp in match_group.past_matches %}
                         <div class="row mt-1">
                             <div class="col-md">
-                                <div class="modal-body-preview">
-                                    <img src="{{ mp.player1.url }}" alt="{{ mp.player1.name }}"
-                                         class="w-75" data-mdb-img="{{ mp.player1.url }}">
-                                    <div class="round-image-gradient"></div>
-                                    <div class="preview-name-container small font-weight-bold text-white">
-                                        {% if mp.match.winner == mp.player1.name %}
-                                            <span class="badge rounded-pill bg-success ms-2">
-                                                <i class="fas fa-sm fa-check"></i>
-                                            </span>
-                                        {% elif mp.match.loser == mp.player1.name %}
-                                            <span class="badge rounded-pill bg-danger ms-2">
-                                                <i class="fas fa-sm fa-times "></i>
-                                            </span>
-                                        {% endif %}
-                                        {{ mp.player1.name }}
-                                    </div>
-                                </div>
+                                {{ render_player(mp.match, mp.player1) }}
                             </div>
                             <div class="col-md">
-                                <div class="modal-body-preview">
-                                    <img src="{{ mp.player2.url }}" alt="{{ mp.player2.name }}"
-                                         class="w-75" data-mdb-img="{{ mp.player2.url }}">
-                                    <div class="round-image-gradient"></div>
-                                    <div class="preview-name-container small font-weight-bold text-white">
-                                        {% if mp.match.winner == mp.player2.name %}
-                                            <span class="badge rounded-pill bg-success ms-2">
-                                                <i class="fas fa-sm fa-check"></i>
-                                            </span>
-                                        {% elif mp.match.loser == mp.player2.name %}
-                                            <span class="badge rounded-pill bg-danger ms-2">
-                                                <i class="fas fa-sm fa-times "></i>
-                                            </span>
-                                        {% endif %}
-                                        {{ mp.player2.name }}
-                                    </div>
-                                </div>
+                                {{ render_player(mp.match, mp.player2) }}
                             </div>
                         </div>
                     {% endfor %}
@@ -116,9 +107,10 @@
     {{ super() }}
     <!--suppress JSUnresolvedVariable -->
     <script>
-        selectPlayer = (playerName) => {
+        selectPlayer = (winner, loser) => {
             const form = document.forms["selectForm"];
-            form.winner.value = playerName;
+            form.winner.value = winner;
+            form.loser.value = loser;
             form.submit();
         }
     </script>

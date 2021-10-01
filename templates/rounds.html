@@ -44,7 +44,16 @@
                                     <tbody>
                                     {% for ss in round_team.series_standings %}
                                         <tr>
-                                            <th scope="row" class="align-middle">{{ ss.series.type }}</th>
+                                            <th scope="row" class="align-middle text-center">
+                                                <p>{{ ss.series.type }}</p>
+                                                {% if ss.series.is_setup_done %}
+                                                    <p class="small">{{ ss.series.group_name1 }}
+                                                        - {{ ss.series.group_name2 }}</p>
+                                                    <a href="{{ url_for("view_series", series_id=ss.series.id) }}">
+                                                        {{ ss.series.scores[0] }} - {{ ss.series.scores[1] }}
+                                                    </a>
+                                                {% endif %}
+                                            </th>
                                             <td>
                                                 <div class="modal-body-preview">
                                                     <img src="{{ ss.standing1.url }}"

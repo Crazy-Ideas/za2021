@@ -7,7 +7,7 @@ from flask import url_for
 from models import Standing, Group, Series, INITIAL2, INITIAL1, DECIDER, TBD, WINNER, LOSER, Match, Player, FINAL
 from utils import get_order, get_season, get_series_types, get_range_of_week, get_list_of_rounds, sort_standings, \
     RoundGroup, round_down, RoundTeam, SeriesStanding, MatchGroup, get_match_player, \
-    get_tbd_series_to_update, get_next_round_series_to_update
+    get_tbd_series_to_update, get_next_round_series_to_update, get_conquest_names, get_lhs_names
 
 
 def init_standings():
@@ -161,25 +161,23 @@ def get_match_group(series: Series) -> MatchGroup:
     standings: List[Standing] = Standing.objects.filter_by(season=series.season) \
         .filter("group_name", Series.objects.IN, series.group_names).get()
     past_matches: List[Match] = [match for match in matches if match.winner != str()]
+    past_matches.sort(key=lambda match: match.order)
     match_group.past_matches = [get_match_player(match, players) for match in past_matches]
     current_match: Match = next((match for match in matches if match.winner == str()), None)
-    if not current_match:
+    if not current_match and not series.winner:
         current_match = Match(series.season, series.week, series.round, series.type)
         if series.week in (1, 3, 5, 7, 8):
-            player1_choices: List[str] = [player.name for player in players if player.group_name == series.group_name1
-                                          and not any(match.winner == player.name for match in past_matches)]
-            player2_choices: List[str] = [player.name for player in players if player.group_name == series.group_name2
-                                          and not any(match.winner == player.name for match in past_matches)]
+            player1_choices: List[str] = get_conquest_names(players, match_group, series.group_name1)
+            player2_choices: List[str] = get_conquest_names(players, match_group, series.group_name2)
         else:
-            player1_choices: List[str] = [player.name for player in players if player.group_name == series.group_name1
-                                          and not any(match.loser == player.name for match in past_matches)]
-            player2_choices: List[str] = [player.name for player in players if player.group_name == series.group_name2
-                                          and not any(match.loser == player.name for match in past_matches)]
+            player1_choices: List[str] = get_lhs_names(players, match_group, series.group_name1)
+            player2_choices: List[str] = get_lhs_names(players, match_group, series.group_name2)
         current_match.player1 = choice(player1_choices)
         current_match.player2 = choice(player2_choices)
         current_match.players = [current_match.player1, current_match.player2]
+        current_match.order = max(match.order for match in past_matches) + 1 if past_matches else 1
         current_match.create()
-    match_group.current_match = get_match_player(current_match, players)
+    match_group.current_match = get_match_player(current_match, players) if current_match else None
     match_group.standing1 = next(item for item in standings if item.group_name == series.group_name1)
     match_group.standing2 = next(item for item in standings if item.group_name == series.group_name2)
     return match_group
@@ -193,15 +191,16 @@ def get_series_score(series: Series, match_group: MatchGroup) -> Tuple[int, int]
 
 def update_results(series: Series, match_group: MatchGroup, winning_name: str) -> None:
     match_group.current_match.match.winner = winning_name
+    match_group.current_match.match.save()
     match_group.past_matches.append(match_group.current_match)
-    scores = get_series_score(series, match_group)
+    series.scores = get_series_score(series, match_group)
     standing: Standing = match_group.winner_standing
-    if max(scores) == 5:
+    if max(series.scores) == 5:
         series.winner = standing.group_name
     update_score(series, standing)
-    update_tbd(series)
+    if not update_tbd(series):
+        series.save()
     standing.save()
-    match_group.current_match.match.save()
     if series.winner and series.round == 601 and series.type == DECIDER:
         setup_initial_matches()
     return
@@ -219,10 +218,12 @@ def update_score(series: Series, standing: Standing) -> None:
     return
 
 
-def update_tbd(series):
-    series_to_update: List[Series] = [series] if series.winner else list()
+def update_tbd(series) -> bool:
     if series.round == 601 and series.type in (WINNER, DECIDER) or series.round == 300 and series.type == FINAL:
-        return
+        return False
+    if not series.winner or not series.loser:
+        return False
+    series_to_update: List[Series] = [series]
     if series.type == INITIAL1:
         tbd_series: List[Series] = get_tbd_series_to_update(series, [WINNER, LOSER])
         tbd_series[0].set_group_name1(series.winner)
@@ -255,7 +256,7 @@ def update_tbd(series):
             next_series.set_group_name1(series.winner)
         series_to_update.append(next_series)
     Series.objects.save_all(series_to_update)
-    return
+    return True
 
 # def test_tbd():
 #     tbd_series = Series.objects.filter_by(season=1, week=8)\
