@@ -127,7 +127,7 @@ def login():
     login_user(user=form.user)
     next_page = request.args.get("next")
     if not next_page or url_parse(next_page).netloc != str():
-        next_page = url_for("view_player_groups")
+        next_page = url_for("play")
     response: Response = make_response(redirect(next_page))
     expiry = form.user.TOKEN_EXPIRY
     response.set_cookie("token", token, max_age=expiry, secure=CI_SECURITY, httponly=True, samesite="Strict")
