@@ -38,69 +38,73 @@
             </h2>
         </div>
     </div>
-    <form id="selectForm" method="POST" novalidate>
-        {{ form.csrf_token() }}
-        {{ form.winner }}
-        {{ form.loser }}
-    </form>
-    <div class="row mt-2">
-        <div class="col-md-10">
-            <div class="lightbox" data-mdb-zoom-level="1.5">
-                <div class="row">
-                    <div class="col-md">
-                        <div class="modal-content">
-                            <div class="btn-select-wrapper">
-                                <button onclick="selectPlayer('{{ match_group.current_match.match.player1 }}', '{{ match_group.current_match.match.player2 }}')"
-                                        type="button" class="btn btn-lg btn-success btn-floating">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </div>
-                            <div class="modal-body-preview">
-                                <img src="{{ match_group.current_match.player1.url }}"
-                                     data-mdb-img="{{ match_group.current_match.player1.url }}"
-                                     class="w-100"
-                                     alt="{{ match_group.current_match.player1.name }}">
+    {% if "TBD" in series.group_names %}
+        <p class="text-center mt-5">Cannot play a match with TBD. This is an error. Contact admin.</p>
+    {% else %}
+        <form id="selectForm" method="POST" novalidate>
+            {{ form.csrf_token() }}
+            {{ form.winner }}
+            {{ form.loser }}
+        </form>
+        <div class="row mt-2">
+            <div class="col-md-10">
+                <div class="lightbox" data-mdb-zoom-level="1.5">
+                    <div class="row">
+                        <div class="col-md">
+                            <div class="modal-content">
+                                <div class="btn-select-wrapper">
+                                    <button onclick="selectPlayer('{{ match_group.current_match.match.player1 }}', '{{ match_group.current_match.match.player2 }}')"
+                                            type="button" class="btn btn-lg btn-success btn-floating">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body-preview">
+                                    <img src="{{ match_group.current_match.player1.url }}"
+                                         data-mdb-img="{{ match_group.current_match.player1.url }}"
+                                         class="w-100"
+                                         alt="{{ match_group.current_match.player1.name }}">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md">
-                        <div class="modal-content">
-                            <div class="btn-select-wrapper">
-                                <button onclick="selectPlayer('{{ match_group.current_match.match.player2 }}', '{{ match_group.current_match.match.player1 }}')"
-                                        type="button" class="btn btn-lg btn-success btn-floating">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </div>
-                            <div class="modal-body-preview">
-                                <img src="{{ match_group.current_match.player2.url }}"
-                                     data-mdb-img="{{ match_group.current_match.player2.url }}"
-                                     class="w-100"
-                                     alt="{{ match_group.current_match.player2.name }}">
+                        <div class="col-md">
+                            <div class="modal-content">
+                                <div class="btn-select-wrapper">
+                                    <button onclick="selectPlayer('{{ match_group.current_match.match.player2 }}', '{{ match_group.current_match.match.player1 }}')"
+                                            type="button" class="btn btn-lg btn-success btn-floating">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body-preview">
+                                    <img src="{{ match_group.current_match.player2.url }}"
+                                         data-mdb-img="{{ match_group.current_match.player2.url }}"
+                                         class="w-100"
+                                         alt="{{ match_group.current_match.player2.name }}">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            {% if match_group.past_matches %}
-                <div class="lightbox">
-                    {% for mp in match_group.past_matches %}
-                        <div class="row mt-1">
-                            <div class="col-md">
-                                {{ render_player(mp.match, mp.player1) }}
+            <div class="col-md-2">
+                {% if match_group.past_matches %}
+                    <div class="lightbox">
+                        {% for mp in match_group.past_matches %}
+                            <div class="row mt-1">
+                                <div class="col-md">
+                                    {{ render_player(mp.match, mp.player1) }}
+                                </div>
+                                <div class="col-md">
+                                    {{ render_player(mp.match, mp.player2) }}
+                                </div>
                             </div>
-                            <div class="col-md">
-                                {{ render_player(mp.match, mp.player2) }}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-center small">No past matches</p>
-            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center small">No past matches</p>
+                {% endif %}
+            </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}
 
 {% block scripts %}

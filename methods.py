@@ -1,6 +1,6 @@
 from itertools import groupby
 from random import shuffle, choice
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from flask import url_for
 
@@ -153,6 +153,8 @@ def get_round_groups(season: int, week: int) -> List[RoundGroup]:
 
 
 def get_match_group(series: Series) -> MatchGroup:
+    if TBD in series.group_names:
+        return MatchGroup()
     match_group = MatchGroup()
     matches: List[Match] = Match.objects.filter_by(season=series.season, week=series.week, type=series.type,
                                                    round=series.round).get()
@@ -163,7 +165,7 @@ def get_match_group(series: Series) -> MatchGroup:
     past_matches: List[Match] = [match for match in matches if match.winner != str()]
     past_matches.sort(key=lambda match: match.order)
     match_group.past_matches = [get_match_player(match, players) for match in past_matches]
-    current_match: Match = next((match for match in matches if match.winner == str()), None)
+    current_match: Optional[Match] = next((match for match in matches if match.winner == str()), None)
     if not current_match and not series.winner:
         current_match = Match(series.season, series.week, series.round, series.type)
         if series.week in (1, 3, 5, 7, 8):
@@ -219,7 +221,7 @@ def update_score(series: Series, standing: Standing) -> None:
 
 
 def update_tbd(series) -> bool:
-    if series.round == 601 and series.type in (WINNER, DECIDER) or series.round == 300 and series.type == FINAL:
+    if series.round == 601 and series.type == DECIDER or series.round == 300 and series.type == FINAL:
         return False
     if not series.winner or not series.loser:
         return False
@@ -235,11 +237,13 @@ def update_tbd(series) -> bool:
         tbd_series[1].set_group_name2(series.loser)
         series_to_update.extend(tbd_series)
     elif series.type == WINNER:
-        next_series: Series = get_next_round_series_to_update(series)
+        if series.round != 601:
+            next_series: Series = get_next_round_series_to_update(series)
+            next_series.set_group_name1(series.winner)
+            series_to_update.append(next_series)
         decider: Series = get_tbd_series_to_update(series, [DECIDER])[0]
-        next_series.set_group_name1(series.winner)
         decider.set_group_name1(series.loser)
-        series_to_update.extend([decider, next_series])
+        series_to_update.append(decider)
     elif series.type == LOSER:
         decider: Series = get_tbd_series_to_update(series, [DECIDER])[0]
         decider.set_group_name2(series.winner)
@@ -257,14 +261,3 @@ def update_tbd(series) -> bool:
         series_to_update.append(next_series)
     Series.objects.save_all(series_to_update)
     return True
-
-# def test_tbd():
-#     tbd_series = Series.objects.filter_by(season=1, week=8)\
-#         .filter("type", Series.objects.IN, [WINNER, DECIDER, FINAL]).get()
-#     tbd_series.sort(key=lambda item: item.order)
-#     tbd_series = tbd_series[:-3]
-#     results = [(get_next_round(series), get_next_series_type(series), series) for series in tbd_series]
-#     results.sort(key=itemgetter(1))
-#     results.sort(key=itemgetter(0))
-#     for data in results:
-#         print(f"{data[0]:5} {data[1]:10} {data[2]}")
