@@ -257,7 +257,7 @@ def update_tbd(series) -> bool:
         if series.round in (210, 230):
             next_series.set_group_name1(series.winner)
         else:  # Series round is 220 or 240
-            next_series.set_group_name1(series.winner)
+            next_series.set_group_name2(series.winner)
         series_to_update.append(next_series)
     Series.objects.save_all(series_to_update)
     return True
