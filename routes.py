@@ -127,13 +127,21 @@ def ranked_players():
     return render_template("players_ranked.html", title="Top 100 Players", players=players)
 
 
-@app.route("/groups/ranked")
+@app.route("/scored_groups")
 @cookie_login_required
 def ranked_groups():
     groups = Group.objects.get()
     update_rank(groups)
     groups.sort(key=lambda item: item.rank)
     return render_template("groups_ranked.html", title="Groups", players=groups)
+
+
+@app.route("/scored_groups/<group_name>")
+@cookie_login_required
+def view_group(group_name: str):
+    players = Player.objects.filter_by(group_name=group_name).get()
+    players.sort(key=lambda item: item.score, reverse=True)
+    return render_template("players_ranked.html", title=group_name, players=players)
 
 
 @app.route("/login", methods=["GET", "POST"])
