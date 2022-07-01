@@ -35,7 +35,7 @@ def make_shell_context() -> dict:
     import methods
     from main import update_url
     from models import Player, Group, Series, Standing, Match, FINAL_SERIES_TYPES
-    from upload import load_from_temp
+    import upload
     return {
         "User": User,
         "Group": Group,
@@ -44,7 +44,7 @@ def make_shell_context() -> dict:
         "Standing": Standing,
         "Match": Match,
         "update_url": update_url,
-        "load_from_temp": load_from_temp,
         "methods": methods,
         "FINAL_SERIES_TYPES": FINAL_SERIES_TYPES,
+        "game": upload,
     }

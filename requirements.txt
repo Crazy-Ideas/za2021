@@ -21,6 +21,7 @@ idna==3.2
 itsdangerous==2.0.1
 Jinja2==3.0.1
 MarkupSafe==2.0.1
+munch==2.5.0
 packaging==21.0
 proto-plus==1.19.0
 protobuf==3.17.3

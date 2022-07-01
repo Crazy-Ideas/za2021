@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">{{ title }}</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">R#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Score</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for player in players %}
+                    <tr>
+                        <td>{{ player.rank }}</td>
+                        <td>{{ player.name }}</td>
+                        <td>{{ player.score }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-9">
+            <div class="lightbox">
+                {% for player_batch in players|batch(6) %}
+                    <div class="row">
+                        {% for player in player_batch %}
+                            <div class="col-md-2 mt-1">
+                                <div class="modal-body-preview">
+                                    <img src="{{ player.url }}"
+                                         alt="{{ player.rank }} - {{ player.name }}- {{ player.score }}"
+                                         class="img-fluid"/>
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ player.rank }} - {{ player.name }}- {{ player.score }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+

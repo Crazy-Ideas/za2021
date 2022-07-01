@@ -1,6 +1,6 @@
 from itertools import groupby
 from random import shuffle, choice
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 
 from flask import url_for
 
@@ -261,3 +261,17 @@ def update_tbd(series) -> bool:
         series_to_update.append(next_series)
     Series.objects.save_all(series_to_update)
     return True
+
+
+def update_rank(items: List[Union[Player, Group]]):
+    updated_items: List[Union[Player, Group]] = list()
+    items.sort(key=lambda item: item.score, reverse=True)
+    for index, item in enumerate(items):
+        if item.rank == index + 1:
+            continue
+        updated_items.append(item)
+        item.rank = index + 1
+    if not updated_items:
+        return
+    items[0].__class__.objects.save_all(updated_items)
+    return

@@ -138,9 +138,26 @@ class Player(FirestoreDocument):
         self.league: int = int()
         self.league_rank: int = int()
         self.qualification_rank: int = int()
+        self.played: int = int()
+        self.won: int = int()
+        self.score: str = "0" * 9
+        self.rank: int = int()
 
     def __repr__(self):
         return f"{self.name}"
+
+    def init_score(self):
+        self.won = int()
+        self.score = "0" * 9
+        self.played = int()
+        self.rank = int()
+
+    def update_score(self, played: int, won: int = 0):
+        if not played:
+            return
+        self.played += played
+        self.won += won
+        self.score = f"{int(self.won / self.played * 10000):05}{self.played:04}"
 
 
 Player.init()
@@ -159,6 +176,10 @@ class Group(FirestoreDocument):
         self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
         self.qualification_locked: bool = bool()
         self.qualified_player_count: int = int()
+        self.played: int = int()
+        self.won: int = int()
+        self.score: str = "0" * 10
+        self.rank: int = int()
 
     def __repr__(self):
         return f"{self.name}:{self.fullname}:P#{self.player_count}"
@@ -182,6 +203,11 @@ class Group(FirestoreDocument):
     @property
     def locked_str(self) -> str:
         return "Yes" if self.qualification_locked else ("No" if self.player_count >= 9 else "Disqualified")
+
+    def update_score(self, played: int, won: int = 0):
+        self.played += played
+        self.won += won
+        self.score = f"{int(self.won / self.played * 10000):05}{self.played:05}"
 
 
 Group.init()

@@ -9,7 +9,8 @@ from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import QualificationForm, LoginForm, PlayForm
-from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results
+from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results, \
+    update_rank
 from models import Group, Player, User, Standing, Series
 from utils import RoundGroup, get_season, MatchGroup
 
@@ -116,6 +117,23 @@ def view_series(series_id: str):
         return render_template("not_found_404.html")
     match_group: MatchGroup = get_match_group(series)
     return render_template("series.html", series=series, match_group=match_group, title="Series")
+
+
+@app.route("/players/ranked")
+@cookie_login_required
+def ranked_players():
+    players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(100).get()
+    players.sort(key=lambda item: item.rank)
+    return render_template("players_ranked.html", title="Top 100 Players", players=players)
+
+
+@app.route("/groups/ranked")
+@cookie_login_required
+def ranked_groups():
+    groups = Group.objects.get()
+    update_rank(groups)
+    groups.sort(key=lambda item: item.rank)
+    return render_template("groups_ranked.html", title="Groups", players=groups)
 
 
 @app.route("/login", methods=["GET", "POST"])

@@ -1,12 +1,15 @@
+import json
 import os
 from datetime import datetime
 from typing import List
 
 import pytz
+# noinspection PyPackageRequirements
 from google.cloud.storage import Client
+from munch import Munch
 
 from main import generate_url
-from models import Player, Group
+from models import Player, Group, Match
 
 
 def load_from_temp():
@@ -64,3 +67,39 @@ def load_from_temp():
     Player.objects.create_all(Player.objects.to_dicts(new_players))
     Group.objects.save_all(updated_groups)
     print(f"{len(new_players)} players uploaded in {seconds} seconds.")
+
+
+def score_groups():
+    players: List[Player] = Player.objects.get()
+    groups: List[Group] = Group.objects.get()
+    update_groups: List[Group] = list()
+    for group in groups:
+        group_players: List[Player] = [player for player in players if player.group_name == group.name]
+        if not group_players:
+            continue
+        update_groups.append(group)
+        group.player_count = len(group_players)
+        played = sum(player.played for player in group_players)
+        won = sum(player.won for player in group_players)
+        group.update_score(played, won)
+        print(f"{group.name}, Played={group.played}, Won = {group.won}, Score = {group.score}")
+    Group.objects.save_all(update_groups, workers=100)
+    print(f"{len(update_groups)} players updated.")
+
+
+def score_players():
+    with open("temp/player.json") as file:
+        json_players = Munch.fromDict(json.load(file))
+    players: List[Player] = Player.objects.get()
+    matches: List[Match] = Match.objects.get()
+    for player in players:
+        player.init_score()
+        won = sum(len(p.won) for p in json_players if p.name == player.name)
+        lost = sum(len(p.lost) for p in json_players if p.name == player.name)
+        player.update_score(won + lost, won)
+        played = sum(1 for m in matches if player.name in m.players)
+        won = sum(1 for m in matches if player.name == m.winner)
+        player.update_score(played, won)
+    Player.objects.save_all(players, workers=100)
+    print("Players updated.")
+    return
