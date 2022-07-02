@@ -44,6 +44,24 @@ class MatchPlayer:
             return str()
         return self.player1.group_name if self.match.winner == self.player1.name else self.player2.group_name
 
+    @property
+    def loser_group_name(self) -> str:
+        if not self.match.winner:
+            return str()
+        return self.player1.group_name if self.match.winner != self.player1.name else self.player2.group_name
+
+    @property
+    def winner(self) -> Optional[Player]:
+        if not self.match.winner:
+            return None
+        return self.player1 if self.match.winner == self.player1.name else self.player2
+
+    @property
+    def loser(self) -> Optional[Player]:
+        if not self.match.winner:
+            return None
+        return self.player1 if self.match.winner != self.player1.name else self.player2
+
 
 class RoundGroup:
     def __init__(self, round_group_text: str):

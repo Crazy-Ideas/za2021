@@ -29,6 +29,7 @@ class Match(FirestoreDocument):
         self.players: List[str] = [TBD, TBD]
         self.winner: str = str()
         self.order: int = int()
+        self.date_played: datetime = datetime.now(tz=pytz.UTC)
 
     def __repr__(self):
         return f"S{self.season}:W{self.week}:R{self.round}:{self.type}:{self.player1}v{self.player2}" \

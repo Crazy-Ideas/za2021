@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">
+                {{ match_player.player1.name }}
+                (#{{ match_player.player1.rank }}, {{ match_player.player1.score }})
+                v {{ match_player.player2.name }}
+                (#{{ match_player.player2.rank }}, {{ match_player.player2.score }})
+            </h3>
+        </div>
+    </div>
+    {% if "TBD" in match_player.match.players %}
+        <p class="text-center mt-5">Cannot play a match with TBD. This is an error. Contact admin.</p>
+    {% else %}
+        <form id="selectForm" method="POST" novalidate>
+            {{ form.csrf_token() }}
+            {{ form.winner }}
+            {{ form.loser }}
+        </form>
+        <div class="row mt-2">
+            <div class="col-md">
+                <div class="lightbox" data-mdb-zoom-level="1.5">
+                    <div class="row">
+                        <div class="col-md">
+                            <div class="modal-content">
+                                <div class="btn-select-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player1 }}', '{{ match_player.match.player2 }}')"
+                                            type="button" class="btn btn-lg btn-success btn-floating">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body-preview">
+                                    <img src="{{ match_player.player1.url }}"
+                                         data-mdb-img="{{ match_player.player1.url }}"
+                                         class="w-100"
+                                         alt="{{ match_player.player1.name }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="modal-content">
+                                <div class="btn-select-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player2 }}', '{{ match_player.match.player1 }}')"
+                                            type="button" class="btn btn-lg btn-success btn-floating">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body-preview">
+                                    <img src="{{ match_player.player2.url }}"
+                                         data-mdb-img="{{ match_player.player2.url }}"
+                                         class="w-100"
+                                         alt="{{ match_player.player2.name }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <!--suppress JSUnresolvedVariable -->
+    <script>
+        selectPlayer = (winner, loser) => {
+            const form = document.forms["selectForm"];
+            form.winner.value = winner;
+            form.loser.value = loser;
+            form.submit();
+        }
+    </script>
+{% endblock %}

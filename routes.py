@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 from functools import wraps
 from typing import List, Tuple
@@ -8,11 +9,11 @@ from flask_login import login_user, current_user, logout_user
 from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
-from forms import QualificationForm, LoginForm, PlayForm
+from forms import QualificationForm, LoginForm, PlayForm, PlayFriendlyForm
 from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results, \
     update_rank
-from models import Group, Player, User, Standing, Series
-from utils import RoundGroup, get_season, MatchGroup
+from models import Group, Player, User, Standing, Series, Match
+from utils import RoundGroup, get_season, MatchGroup, MatchPlayer
 
 
 def cookie_login_required(route_function):
@@ -123,7 +124,7 @@ def view_series(series_id: str):
 @cookie_login_required
 def ranked_players():
     players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(100).get()
-    players.sort(key=lambda item: item.rank)
+    players.sort(key=lambda item: item.score, reverse=True)
     return render_template("players_ranked.html", title="Top 100 Players", players=players)
 
 
@@ -132,7 +133,7 @@ def ranked_players():
 def ranked_groups():
     groups = Group.objects.get()
     update_rank(groups)
-    groups.sort(key=lambda item: item.rank)
+    groups.sort(key=lambda item: item.score, reverse=True)
     return render_template("groups_ranked.html", title="Groups", players=groups)
 
 
@@ -144,6 +145,51 @@ def view_group(group_name: str):
     return render_template("players_ranked.html", title=group_name, players=players)
 
 
+@app.route("/play_friendly", methods=["GET", "POST"])
+@cookie_login_required
+def play_friendly():
+    play_from = request.args.get("play_from", "top")
+    match: Match = Match.objects.filter_by(winner=str()).first()
+    if not match:
+        if play_from == "top":
+            players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(20).get()
+        else:
+            players = Player.objects.order_by("played").limit(20).get()
+        selection: List[Player] = random.sample(players, k=2)
+        match = Match(series_type="friendly")
+        match.player1 = selection[0].name
+        match.player2 = selection[1].name
+        match.players = [selection[0].name, selection[1].name]
+        match.create()
+    else:
+        selection: List[Player] = Player.objects.filter("name", Player.objects.IN, [match.player1, match.player2]).get()
+    match_player: MatchPlayer = MatchPlayer()
+    match_player.match = match
+    match_player.player1 = selection[0]
+    match_player.player2 = selection[1]
+    form = PlayFriendlyForm(match_player)
+    if not form.validate_on_submit():
+        return render_template("play_friendly.html", form=form, title="Play Friendly", match_player=match_player)
+    match_player.match.winner = form.winner.data
+    match_player.winner.update_score(played=1, won=1)
+    match_player.loser.update_score(played=1, won=0)
+    group_names = [match_player.player1.group_name, match_player.player2.group_name]
+    if group_names[0] == group_names[1]:
+        group: Group = Group.objects.filter_by(name=group_names[0]).first()
+        group.update_score(played=2, won=1)
+        groups = [group]
+    else:
+        groups: List[Group] = Group.objects.filter("name", Group.objects.IN, group_names).get()
+        winner: Group = next(group for group in groups if group.name == match_player.winner_group_name)
+        loser: Group = next(group for group in groups if group.name != winner.name)
+        winner.update_score(played=1, won=1)
+        loser.update_score(played=1, won=0)
+    match_player.match.save()
+    Player.objects.save_all([match_player.player1, match_player.player2])
+    Group.objects.save_all(groups)
+    return redirect(url_for("play_friendly", play_from=play_from))
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -153,7 +199,7 @@ def login():
     login_user(user=form.user)
     next_page = request.args.get("next")
     if not next_page or url_parse(next_page).netloc != str():
-        next_page = url_for("play")
+        next_page = url_for("play_friendly", play_from="top")
     response: Response = make_response(redirect(next_page))
     expiry = form.user.TOKEN_EXPIRY
     response.set_cookie("token", token, max_age=expiry, secure=CI_SECURITY, httponly=True, samesite="Strict")

@@ -60,7 +60,10 @@
                     <a class="nav-link" href="{{ url_for("view_rounds") }}">Fixture & Results</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("play") }}">Play</a>
+                    <a class="nav-link" href="{{ url_for("play_friendly", play_from="top") }}">Play Top</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for("play_friendly", play_from="bottom") }}">Play Bottom</a>
                 </li>
             </ul>
         </div>
