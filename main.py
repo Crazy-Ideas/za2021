@@ -49,7 +49,6 @@ def update_url(*args, **kwargs):
             result_count: int = len(updated_players)
             if result_count in {1, player_count} or result_count % max_workers == 0:
                 print(f"{result_count} of {player_count} url generated.")
-    updated_players.sort(key=lambda item: item.score, reverse=True)
     update_rank(updated_players)
     Player.objects.save_all(updated_players)
     groups: List[Group] = Group.objects.get()

@@ -11,7 +11,7 @@ from werkzeug.urls import url_parse
 from app import app, CI_SECURITY
 from forms import QualificationForm, LoginForm, PlayForm, PlayFriendlyForm
 from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results, \
-    update_rank
+    update_rank_and_save
 from models import Group, Player, User, Standing, Series, Match
 from utils import RoundGroup, get_season, MatchGroup, MatchPlayer
 
@@ -124,7 +124,7 @@ def view_series(series_id: str):
 @cookie_login_required
 def ranked_players():
     players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(100).get()
-    players.sort(key=lambda item: item.score, reverse=True)
+    update_rank_and_save(players)
     return render_template("players_ranked.html", title="Top 100 Players", players=players)
 
 
@@ -132,8 +132,7 @@ def ranked_players():
 @cookie_login_required
 def ranked_groups():
     groups = Group.objects.get()
-    update_rank(groups)
-    groups.sort(key=lambda item: item.score, reverse=True)
+    update_rank_and_save(groups)
     return render_template("groups_ranked.html", title="Groups", players=groups)
 
 
