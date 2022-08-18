@@ -53,14 +53,12 @@ def update_url(*args, **kwargs):
     Player.objects.save_all(updated_players)
     groups: List[Group] = Group.objects.get()
     for group in groups:
-        if group.player_name:
-            player: Player = next(player for player in updated_players if player.name == group.player_name)
-        else:
-            player: Player = next((player for player in updated_players if player.group_name == group.name), None)
-            if not player:
-                continue
-            group.player_name = player.name
-        group.url = player.url
+        top_player: Player = max([player for player in updated_players if player.group_name == group.name],
+                                 key=lambda item: item.score)
+        if not top_player:
+            continue
+        group.player_name = top_player.name
+        group.url = top_player.url
         group.url_expiration = player.url_expiration
     update_rank(groups)
     Group.objects.save_all(groups)
