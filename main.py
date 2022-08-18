@@ -8,8 +8,10 @@ import pytz
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-cloud.json"
 
+# noinspection PyPackageRequirements
 from google.cloud.storage import Client
 from models import Player, Group
+from methods import update_rank
 
 
 def generate_url(player: Player) -> Optional[Player]:
@@ -48,8 +50,7 @@ def update_url(*args, **kwargs):
             if result_count in {1, player_count} or result_count % max_workers == 0:
                 print(f"{result_count} of {player_count} url generated.")
     updated_players.sort(key=lambda item: item.score, reverse=True)
-    for index, player in enumerate(updated_players):
-        player.rank = index + 1
+    update_rank(updated_players)
     Player.objects.save_all(updated_players)
     groups: List[Group] = Group.objects.get()
     for group in groups:
@@ -62,6 +63,7 @@ def update_url(*args, **kwargs):
             group.player_name = player.name
         group.url = player.url
         group.url_expiration = player.url_expiration
+    update_rank(groups)
     Group.objects.save_all(groups)
     seconds: int = (datetime.now(tz=pytz.UTC) - start_time).seconds
     print(f"All urls updated in {seconds} seconds.")

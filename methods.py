@@ -265,12 +265,15 @@ def update_tbd(series) -> bool:
 
 def update_rank(items: List[Union[Player, Group]]):
     updated_items: List[Union[Player, Group]] = list()
-    items.sort(key=lambda item: item.score, reverse=True)
+    items.sort(key=lambda item: (item.score, -item.rank), reverse=True)
+    previous_rank, previous_score = 0, 0
     for index, item in enumerate(items):
-        if item.rank == index + 1:
+        new_rank = previous_rank if item.score == previous_score else index + 1
+        previous_rank, previous_score = new_rank, item.score
+        if item.rank == new_rank:
             continue
+        item.rank = new_rank
         updated_items.append(item)
-        item.rank = index + 1
     if not updated_items:
         return
     items[0].__class__.objects.save_all(updated_items)
