@@ -11,6 +11,24 @@ from munch import Munch
 from main import generate_url
 from models import Player, Group, Match
 
+NEW_PLAYERS: dict = {
+    "AR": "Alexandra Daddario",
+    "BW": "Bonnie Wright",
+    "DF": "Dakota Fanning",
+    "EE": "Emily Deschanel",
+    "EF": "Elle Fanning",
+    "EU": "Erica Durance",
+    "EV": "Evanna Lynch",
+    "HH": "Helen Hunt",
+    "JX": "Jamie Alexander",
+    "MW": "Massie Williams",
+    "RE": "Rache Weiz",
+    "SS": "Sadie Sink",
+    "TJ": "Anya-Taylor Joy",
+    "ZC": "Zendaya Coleman",
+    "ZD": "Zoey Deschanel",
+}
+
 
 def load_from_temp():
     start_time: datetime = datetime.now(tz=pytz.UTC)
@@ -20,16 +38,18 @@ def load_from_temp():
     groups: List[Group] = Group.objects.get()
     new_players: List[Player] = list()
     updated_groups: List[Group] = list()
+    created_groups: List[Group] = list()
     total_files: int = len(os.listdir("temp"))
     for index, filename in enumerate(os.listdir("temp")):
+        if filename[-5:] == ".json":
+            continue
         player_name = filename[:5]
         group_name = filename[:2]
         if any(player.name == player_name for player in players):
             print(f"{player_name} already exists in players. Not uploaded.")
             continue
-        group: Group = next((group for group in groups if group.name == group_name), None)
-        if not group:
-            print(f"{group} does not exists. {player_name} not uploaded")
+        if not any(group.name == group_name for group in groups) and group_name not in NEW_PLAYERS:
+            print(f"{player_name}: Invalid group name. Group not initialized in NEW_PLAYERS.")
             continue
         # Upload in cloud storage
         file_path = os.path.join("temp", filename)
@@ -53,8 +73,18 @@ def load_from_temp():
         os.remove(file_path)
         new_players.append(new_player)
         # Update group & list
+        group: Group = next((group for group in groups if group.name == group_name), None)
+        if group:
+            updated_groups.append(group)
+        else:
+            group: Group = Group()
+            group.name = group_name
+            group.fullname = NEW_PLAYERS[group_name]
+            group.url = new_player.url
+            group.url_expiration = new_player.url_expiration
+            groups.append(group)
+            created_groups.append(group)
         group.player_count += 1
-        updated_groups.append(group)
         # Periodic status reporting and filing
         seconds: int = (datetime.now(tz=pytz.UTC) - start_time).seconds
         if seconds % 10 == 0 and seconds != last_status:
@@ -63,13 +93,16 @@ def load_from_temp():
             new_players: List[Player] = list()
             Group.objects.save_all(updated_groups)
             updated_groups: List[Group] = list()
+            Group.objects.create_all(Group.objects.to_dicts(created_groups))
+            created_groups: List[Group] = list()
             print(f"{(index + 1) / total_files:.0%} completed in {seconds} seconds.")
     Player.objects.create_all(Player.objects.to_dicts(new_players))
     Group.objects.save_all(updated_groups)
+    Group.objects.create_all(Group.objects.to_dicts(created_groups))
     print(f"{len(new_players)} players uploaded in {seconds} seconds.")
 
 
-def score_groups():
+def _score_groups():
     players: List[Player] = Player.objects.get()
     groups: List[Group] = Group.objects.get()
     update_groups: List[Group] = list()
@@ -87,7 +120,7 @@ def score_groups():
     print(f"{len(update_groups)} players updated.")
 
 
-def score_players():
+def _score_players():
     with open("temp/player.json") as file:
         json_players = Munch.fromDict(json.load(file))
     players: List[Player] = Player.objects.get()
