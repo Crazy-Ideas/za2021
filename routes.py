@@ -1,3 +1,4 @@
+import json
 import random
 from datetime import datetime
 from functools import wraps
@@ -152,9 +153,15 @@ def play_friendly():
     if not match:
         if play_from == "top":
             players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(20).get()
-        else:
+            selection: List[Player] = random.sample(players, k=2)
+        elif play_from == "bottom":
             players = Player.objects.order_by("played").limit(20).get()
-        selection: List[Player] = random.sample(players, k=2)
+            selection: List[Player] = random.sample(players, k=2)
+        else:
+            with open("temp/player_names.json") as file:
+                player_names: List[str] = json.load(file)
+            select_names: List[str] = random.sample(player_names, k=2)
+            selection: List[Player] = Player.objects.filter("name", Player.objects.IN, select_names).get()
         match = Match(series_type="friendly")
         match.player1 = selection[0].name
         match.player2 = selection[1].name
@@ -170,6 +177,7 @@ def play_friendly():
     if not form.validate_on_submit():
         return render_template("play_friendly.html", form=form, title="Play Friendly", match_player=match_player)
     match_player.match.winner = form.winner.data
+    match_player.match.date_played = datetime.now(tz=pytz.UTC)
     match_player.winner.update_score(played=1, won=1)
     match_player.loser.update_score(played=1, won=0)
     group_names = [match_player.player1.group_name, match_player.player2.group_name]
@@ -198,7 +206,7 @@ def login():
     login_user(user=form.user)
     next_page = request.args.get("next")
     if not next_page or url_parse(next_page).netloc != str():
-        next_page = url_for("play_friendly", play_from="top")
+        next_page = url_for("play_friendly", play_from="random")
     response: Response = make_response(redirect(next_page))
     expiry = form.user.TOKEN_EXPIRY
     response.set_cookie("token", token, max_age=expiry, secure=CI_SECURITY, httponly=True, samesite="Strict")
