@@ -4,7 +4,6 @@ LICENSE
 *.pyd
 __pycache__
 venv/
-temp/
 .idea/
 .git/
 .gitignore
