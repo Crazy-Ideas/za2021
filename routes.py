@@ -154,6 +154,16 @@ def view_wc_standings():
     return render_template("wc_standings.html", standings=standings, title="World Cup 2022 - Standings")
 
 
+@app.route("/standings/wc/<group_name>")
+@cookie_login_required
+def view_wc_players_in_a_group(group_name: str):
+    players = Player.objects.filter_by(group_name=group_name).get()
+    group = Standing.objects.filter_by(group_name=group_name, season=SEASON).first()
+    title = f"{group.wc_rank}  {group.group_fullname}   S={group.wc_score}"
+    players.sort(key=lambda item: item.wc_score, reverse=True)
+    return render_template("wc_players.html", title=title, players=players)
+
+
 @app.route("/play/wordcup", methods=["GET", "POST"])
 @cookie_login_required
 def play_world_cup():

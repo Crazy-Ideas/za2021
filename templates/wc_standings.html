@@ -38,17 +38,19 @@
                     {% for standing in standing_batch %}
                         <div class="col-md-2 mt-1">
                             <div class="modal-body-preview">
-                                <img src="{{ standing.url }}"
-                                     alt="{{ standing.group_fullname }}"
-                                     class="img-fluid"/>
-                                <div class="round-image-gradient"></div>
-                                <div class="preview-name-container small font-weight-bold text-white">
-                                    {{ standing.wc_rank }} - {{ standing.group_name }}
-                                    - S={{ standing.wc_score }}, P={{ standing.wc_played }}, W={{ standing.wc_won }}
-                                    {% if standing.eliminated %}
-                                        , E={{ standing.eliminated }}
-                                    {% endif %}
-                                </div>
+                                <a href="{{ url_for('view_wc_players_in_a_group', group_name=standing.group_name) }}">
+                                    <img src="{{ standing.url }}"
+                                         alt="{{ standing.group_fullname }}"
+                                         class="img-fluid"/>
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ standing.wc_rank }} - {{ standing.group_name }}
+                                        - S={{ standing.wc_score }}, P={{ standing.wc_played }}, W={{ standing.wc_won }}
+                                        {% if standing.eliminated %}
+                                            , E={{ standing.eliminated }}
+                                        {% endif %}
+                                    </div>
+                                </a>
                             </div>
                         </div>
                     {% endfor %}
