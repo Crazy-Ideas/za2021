@@ -172,7 +172,7 @@ def play_world_cup():
         return redirect(url_for("view_wc_standings"))
     form: PlayWorldCupForm = PlayWorldCupForm(wc_match)
     if not form.validate_on_submit():
-        return render_template("play_wc.html", mt=MarginTag, match_player=wc_match, title="Play World Cup", form=form)
+        return render_template("wc_play.html", mt=MarginTag, match_player=wc_match, title="Play World Cup", form=form)
     wc_match.update_result(form.winner.data, form.margin.data)
     return redirect(url_for("play_world_cup"))
 
