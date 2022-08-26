@@ -125,6 +125,7 @@ def _score_players():
         json_players = Munch.fromDict(json.load(file))
     players: List[Player] = Player.objects.get()
     matches: List[Match] = Match.objects.get()
+    matches = [match for match in matches if match.season != 2022 and match.winner]
     for player in players:
         player.init_score()
         won = sum(len(p.won) for p in json_players if p.name == player.name)
@@ -136,3 +137,41 @@ def _score_players():
     Player.objects.save_all(players, workers=100)
     print("Players updated.")
     return
+
+
+def upload_players():
+    start_time: datetime = datetime.now(tz=pytz.UTC)
+    last_status = seconds = 0
+    players: List[Player] = Player.objects.get()
+    groups: List[Group] = Group.objects.get()
+    new_players: List[Player] = list()
+    total_files: int = len(os.listdir("temp"))
+    for index, filename in enumerate(os.listdir("temp")):
+        if filename[-5:] == ".json":
+            continue
+        player_name = filename[:5]
+        group_name = filename[:2]
+        if any(player.name == player_name for player in players):
+            print(f"{player_name} already exists in players. Not uploaded.")
+            continue
+        if not any(group.name == group_name for group in groups) and group_name not in NEW_PLAYERS:
+            print(f"{player_name}: Invalid group name. Group not initialized in NEW_PLAYERS.")
+            continue
+        # Upload in cloud storage
+        file_path = os.path.join("temp", filename)
+        # New Player object
+        new_player: Player = Player()
+        new_player.name = player_name
+        new_player.group_name = group_name
+        # Update new players list and remove file
+        os.remove(file_path)
+        new_players.append(new_player)
+        # Periodic status reporting and filing
+        seconds: int = (datetime.now(tz=pytz.UTC) - start_time).seconds
+        if seconds % 10 == 0 and seconds != last_status:
+            last_status = seconds
+            Player.objects.create_all(Player.objects.to_dicts(new_players))
+            new_players: List[Player] = list()
+            print(f"{(index + 1) / total_files:.0%} completed in {seconds} seconds.")
+    Player.objects.create_all(Player.objects.to_dicts(new_players))
+    print(f"{len(new_players)} players uploaded in {seconds} seconds.")

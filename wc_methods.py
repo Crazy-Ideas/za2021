@@ -21,6 +21,7 @@ class WorldCupMatch:
 
     def update_result(self, winning_name: str, winning_margin: str):
         self.match.winner = winning_name
+        self.match.win_margin = winning_margin
         self.match.date_played = datetime.now(tz=pytz.UTC)
         group_names: List[str] = [self.player1.group_name, self.player2.group_name]
         query = Standing.objects.filter("group_name", Standing.objects.IN, group_names)

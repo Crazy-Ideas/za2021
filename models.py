@@ -49,8 +49,8 @@ class Match(FirestoreDocument):
         self.date_played: datetime = datetime.now(tz=pytz.UTC)
 
     def __repr__(self):
-        return f"S{self.season}:W{self.week}:R{self.round}:{self.type}:{self.player1}v{self.player2}" \
-               f":W={self.winner if self.winner else TBD}"
+        return f"S{self.season}:O{self.order}:R{self.round}:{self.type}:{self.player1}v{self.player2}" \
+               f":W={self.winner if self.winner else TBD}({self.win_margin})"
 
     @property
     def loser(self) -> str:

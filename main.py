@@ -50,17 +50,22 @@ def update_url(*args, **kwargs):
             if result_count in {1, player_count} or result_count % max_workers == 0:
                 print(f"{result_count} of {player_count} url generated.")
     update_rank(updated_players)
-    Player.objects.save_all(updated_players)
+    update_rank(updated_players, "wc_rank", "wc_score")
     groups: List[Group] = Group.objects.get()
     for group in groups:
-        top_player: Player = max([player for player in updated_players if player.group_name == group.name],
-                                 key=lambda item: item.score)
+        players_in_this_group: List[Player] = [player for player in updated_players if player.group_name == group.name]
+        group.player_count = len(players_in_this_group)
+        top_player: Player = max(players_in_this_group, key=lambda item: item.score)
         if not top_player:
             continue
+        for player in players_in_this_group:
+            player.star_player = False
+        top_player.star_player = True
         group.player_name = top_player.name
         group.url = top_player.url
-        group.url_expiration = player.url_expiration
+        group.url_expiration = top_player.url_expiration
     update_rank(groups)
+    Player.objects.save_all(updated_players)
     Group.objects.save_all(groups)
     seconds: int = (datetime.now(tz=pytz.UTC) - start_time).seconds
     print(f"All urls updated in {seconds} seconds.")
