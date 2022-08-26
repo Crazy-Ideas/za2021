@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h3 class="mb-2 mt-2">{{ title }}</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">R#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Score</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for standing in standings %}
+                    <tr>
+                        <td>{{ standing.wc_rank }}</td>
+                        <td>{{ standing.group_fullname }} ({{ standing.group_name }})</td>
+                        <td>
+                            {{ standing.wc_score }}
+                            {% if standing.eliminated %}
+                                (R{{ standing.eliminated }})
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-9">
+            {% for standing_batch in standings|batch(6) %}
+                <div class="row">
+                    {% for standing in standing_batch %}
+                        <div class="col-md-2 mt-1">
+                            <div class="modal-body-preview">
+                                <img src="{{ standing.url }}"
+                                     alt="{{ standing.group_fullname }}"
+                                     class="img-fluid"/>
+                                <div class="round-image-gradient"></div>
+                                <div class="preview-name-container small font-weight-bold text-white">
+                                    {{ standing.wc_rank }} - {{ standing.group_name }}
+                                    - S={{ standing.wc_score }}, P={{ standing.wc_played }}, W={{ standing.wc_won }}
+                                    {% if standing.eliminated %}
+                                        , E={{ standing.eliminated }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+

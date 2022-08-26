@@ -16,18 +16,35 @@ FINAL_SERIES_TYPES = (INITIAL1, INITIAL2, WINNER, LOSER, DECIDER, FINAL)
 TBD = "TBD"
 
 
+class MarginTag:
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    WON = "won"
+    LOST = "lost"
+
+
+WC_WIN_MARGIN = {
+    MarginTag.HIGH: {MarginTag.WON: 3, MarginTag.LOST: -2},
+    MarginTag.MEDIUM: {MarginTag.WON: 2, MarginTag.LOST: -1},
+    MarginTag.LOW: {MarginTag.WON: 1, MarginTag.LOST: 0},
+}
+
+
 class Match(FirestoreDocument):
 
-    def __init__(self, season: int = None, week: int = None, round_number: int = None, series_type: str = None):
+    def __init__(self, season: int = None, week: int = None, round_number: int = None, series_type: str = None,
+                 player1: str = None, player2: str = None):
         super().__init__()
         self.season: int = season if season else int()
         self.week: int = week if week else int()
         self.round: int = round_number if round_number else int()
         self.type: str = series_type if series_type else str()
-        self.player1: str = TBD
-        self.player2: str = TBD
-        self.players: List[str] = [TBD, TBD]
+        self.player1: str = player1 if player1 else TBD
+        self.player2: str = player2 if player2 else TBD
+        self.players: List[str] = [self.player1, self.player2]
         self.winner: str = str()
+        self.win_margin: str = str()
         self.order: int = int()
         self.date_played: datetime = datetime.now(tz=pytz.UTC)
 
@@ -99,71 +116,6 @@ class Series(FirestoreDocument):
 Series.init("series")
 
 
-class Standing(FirestoreDocument):
-
-    def __init__(self, season: int = None, group_name: str = None):
-        super().__init__()
-        self.season: int = season if season else int()
-        self.group_name: str = group_name if group_name else str()
-        self.group_fullname: str = TBD
-        self.url_name: str = str()
-        self.url: str = str()
-        self.weekly_scores: List[int] = [int()] * 7
-        self.weekly_ties: List[int] = [int()] * 7
-
-    def __repr__(self):
-        return f"S{self.season}:{self.group_name}:S{self.total_score}:T{self.total_ties}"
-
-    @property
-    def total_score(self) -> int:
-        return sum(self.weekly_scores)
-
-    @property
-    def total_ties(self) -> int:
-        return sum(self.weekly_ties)
-
-
-Standing.init()
-
-
-class Player(FirestoreDocument):
-
-    def __init__(self):
-        super().__init__()
-        self.name: str = str()
-        self.group_name: str = str()
-        self.star_player: bool = bool()
-        self.url: str = str()
-        self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
-        self.qualified: bool = bool()
-        self.league: int = int()
-        self.league_rank: int = int()
-        self.qualification_rank: int = int()
-        self.played: int = int()
-        self.won: int = int()
-        self.score: str = "0" * 9
-        self.rank: int = int()
-
-    def __repr__(self):
-        return f"{self.name}"
-
-    def init_score(self):
-        self.won = int()
-        self.score = "0" * 9
-        self.played = int()
-        self.rank = int()
-
-    def update_score(self, played: int, won: int = 0):
-        if not played:
-            return
-        self.played += played
-        self.won += won
-        self.score = f"{int(self.won / self.played * 10000):05}{self.played:04}"
-
-
-Player.init()
-
-
 class Group(FirestoreDocument):
 
     def __init__(self):
@@ -212,6 +164,102 @@ class Group(FirestoreDocument):
 
 
 Group.init()
+
+
+class Standing(FirestoreDocument):
+
+    def __init__(self, season: int = None, group_name: str = None, group_fullname: str = None, url_name: str = None,
+                 url: str = None):
+        super().__init__()
+        self.season: int = season if season else int()
+        self.group_name: str = group_name if group_name else str()
+        self.group_fullname: str = group_fullname if group_fullname else str()
+        self.url_name: str = url_name if url_name else str()
+        self.url: str = url if url else str()
+        self.weekly_scores: List[int] = [int()] * 7
+        self.weekly_ties: List[int] = [int()] * 7
+        self.eliminated: int = int()  # Elimination round
+        self.wc_score: int = int()
+        self.wc_played: int = int()
+        self.wc_won: int = int()
+        self.wc_rank: int = int()
+
+    def __repr__(self):
+        return f"S{self.season}:{self.group_name}:S{self.total_score}:T{self.total_ties}"
+
+    @property
+    def wc_score_for_ranking(self) -> int:
+        in_play_bonus = self.eliminated * 10 ** 5 if self.eliminated else 10 ** 8
+        return in_play_bonus + self.wc_score
+
+    @property
+    def total_score(self) -> int:
+        return sum(self.weekly_scores)
+
+    @property
+    def total_ties(self) -> int:
+        return sum(self.weekly_ties)
+
+    def wc_update_score(self, won: bool, margin: str, group: Group) -> None:
+        win_tag: str = MarginTag.WON if won else MarginTag.LOST
+        won: int = 1 if won else 0
+        self.wc_score += WC_WIN_MARGIN[margin][win_tag]
+        self.wc_played += 1
+        self.wc_won += won
+        group.update_score(played=1, won=won)
+
+
+Standing.init()
+
+
+class Player(FirestoreDocument):
+
+    def __init__(self):
+        super().__init__()
+        self.name: str = str()
+        self.group_name: str = str()
+        self.star_player: bool = bool()
+        self.url: str = str()
+        self.url_expiration: datetime = datetime.now(tz=pytz.UTC)
+        self.qualified: bool = bool()
+        self.league: int = int()
+        self.league_rank: int = int()
+        self.qualification_rank: int = int()
+        self.played: int = int()
+        self.won: int = int()
+        self.score: str = "0" * 9
+        self.rank: int = int()
+        self.wc_score: int = int()
+        self.wc_played: int = int()
+        self.wc_won: int = int()
+        self.wc_rank: int = int()
+
+    def __repr__(self):
+        return f"{self.name}"
+
+    def init_score(self):
+        self.won = int()
+        self.score = "0" * 9
+        self.played = int()
+        self.rank = int()
+
+    def update_score(self, played: int, won: int = 0):
+        if not played:
+            return
+        self.played += played
+        self.won += won
+        self.score = f"{int(self.won / self.played * 10000):05}{self.played:04}"
+
+    def wc_update_score(self, won: bool, margin: str):
+        win_tag: str = MarginTag.WON if won else MarginTag.LOST
+        won: int = 1 if won else 0
+        self.wc_score += WC_WIN_MARGIN[margin][win_tag]
+        self.wc_played += 1
+        self.wc_won += won
+        self.update_score(played=1, won=won)
+
+
+Player.init()
 
 
 class User(FirestoreDocument, UserMixin):

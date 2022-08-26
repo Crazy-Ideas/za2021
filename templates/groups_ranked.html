@@ -17,29 +17,29 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for player in players %}
+                {% for group in groups %}
                     <tr>
-                        <td>{{ player.rank }}</td>
-                        <td>{{ player.name }}</td>
-                        <td>{{ player.score }}</td>
+                        <td>{{ group.rank }}</td>
+                        <td>{{ group.name }}</td>
+                        <td>{{ group.score }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
         <div class="col-md-9">
-            {% for player_batch in players|batch(6) %}
+            {% for group_batch in groups|batch(6) %}
                 <div class="row">
-                    {% for player in player_batch %}
+                    {% for group in group_batch %}
                         <div class="col-md-2 mt-1">
                             <div class="modal-body-preview">
-                                <a href="{{ url_for('view_group', group_name=player.name) }}">
-                                    <img src="{{ player.url }}"
-                                         alt="{{ player.rank }} - {{ player.name }}- {{ player.score }}"
+                                <a href="{{ url_for('view_group', group_name=group.name) }}">
+                                    <img src="{{ group.url }}"
+                                         alt="{{ group.rank }} - {{ group.name }}- {{ group.score }}"
                                          class="img-fluid"/>
                                     <div class="round-image-gradient"></div>
                                     <div class="preview-name-container small font-weight-bold text-white">
-                                        {{ player.rank }} - {{ player.name }}- {{ player.score }}
+                                        {{ group.rank }} - {{ group.name }}- {{ group.score }}
                                     </div>
                                 </a>
                             </div>

@@ -263,21 +263,21 @@ def update_tbd(series) -> bool:
     return True
 
 
-def update_rank_and_save(items: List[Union[Player, Group]]):
-    updated_items: List[Union[Player, Group]] = update_rank(items)
+def update_rank_and_save(items: List[Union[Player, Group, Standing]], rank="rank", score="score"):
+    updated_items: List[Union[Player, Group, Standing]] = update_rank(items, rank, score)
     items[0].__class__.objects.save_all(updated_items)
     return
 
 
-def update_rank(items: List[Union[Player, Group]]) -> List[Union[Player, Group]]:
+def update_rank(items: List[Union[Player, Group, Standing]], rank="rank", score="score") -> List[Union[Player, Group]]:
     updated_items: List[Union[Player, Group]] = list()
-    items.sort(key=lambda item: item.score, reverse=True)
+    items.sort(key=lambda item: getattr(item, score), reverse=True)
     previous_rank, previous_score = 0, 0
     for index, item in enumerate(items):
-        new_rank = previous_rank if item.score == previous_score else index + 1
-        previous_rank, previous_score = new_rank, item.score
-        if item.rank == new_rank:
+        new_rank = previous_rank if getattr(item, score) == previous_score else index + 1
+        previous_rank, previous_score = new_rank, getattr(item, score)
+        if getattr(item, rank) == new_rank:
             continue
-        item.rank = new_rank
+        setattr(item, rank, new_rank)
         updated_items.append(item)
     return updated_items

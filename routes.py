@@ -10,11 +10,12 @@ from flask_login import login_user, current_user, logout_user
 from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
-from forms import QualificationForm, LoginForm, PlayForm, PlayFriendlyForm
+from forms import QualificationForm, LoginForm, PlayForm, PlayFriendlyForm, PlayWorldCupForm
 from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results, \
     update_rank_and_save
-from models import Group, Player, User, Standing, Series, Match
+from models import Group, Player, User, Standing, Series, Match, MarginTag
 from utils import RoundGroup, get_season, MatchGroup, MatchPlayer
+from wc_methods import SEASON, WorldCupMatch, get_wc_match
 
 
 def cookie_login_required(route_function):
@@ -88,7 +89,7 @@ def view_rounds():
     return redirect(url_for("rounds_for_week", season=season, week=week))
 
 
-@app.route("/play", methods=["GET", "POST"])
+@app.route("/play/season2021", methods=["GET", "POST"])
 @cookie_login_required
 def play():
     series: Series = get_next_series()
@@ -134,7 +135,7 @@ def ranked_players():
 def ranked_groups():
     groups = Group.objects.get()
     update_rank_and_save(groups)
-    return render_template("groups_ranked.html", title="Groups", players=groups)
+    return render_template("groups_ranked.html", title="Groups", groups=groups)
 
 
 @app.route("/scored_groups/<group_name>")
@@ -145,11 +146,32 @@ def view_group(group_name: str):
     return render_template("players_ranked.html", title=group_name, players=players)
 
 
-@app.route("/play_friendly", methods=["GET", "POST"])
+@app.route("/standings/wc")
+@cookie_login_required
+def view_wc_standings():
+    standings: List[Standing] = Standing.objects.filter_by(season=SEASON).get()
+    update_rank_and_save(standings, "wc_rank", "wc_score_for_ranking")
+    return render_template("wc_standings.html", standings=standings, title="World Cup 2022 - Standings")
+
+
+@app.route("/play/wordcup", methods=["GET", "POST"])
+@cookie_login_required
+def play_world_cup():
+    wc_match: WorldCupMatch = get_wc_match()
+    if not wc_match:
+        return redirect(url_for("view_wc_standings"))
+    form: PlayWorldCupForm = PlayWorldCupForm(wc_match)
+    if not form.validate_on_submit():
+        return render_template("play_wc.html", mt=MarginTag, match_player=wc_match, title="Play World Cup", form=form)
+    wc_match.update_result(form.winner.data, form.margin.data)
+    return redirect(url_for("play_world_cup"))
+
+
+@app.route("/play/friendly", methods=["GET", "POST"])
 @cookie_login_required
 def play_friendly():
     play_from = request.args.get("play_from", "top")
-    match: Match = Match.objects.filter_by(winner=str()).first()
+    match: Match = Match.objects.filter_by(type="friendly", winner=str()).first()
     if not match:
         if play_from == "top":
             players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(20).get()
@@ -171,8 +193,8 @@ def play_friendly():
         selection: List[Player] = Player.objects.filter("name", Player.objects.IN, [match.player1, match.player2]).get()
     match_player: MatchPlayer = MatchPlayer()
     match_player.match = match
-    match_player.player1 = selection[0]
-    match_player.player2 = selection[1]
+    match_player.player1 = next(s for s in selection if s.name == match.player1)
+    match_player.player2 = next(s for s in selection if s.name == match.player2)
     form = PlayFriendlyForm(match_player)
     if not form.validate_on_submit():
         return render_template("play_friendly.html", form=form, title="Play Friendly", match_player=match_player)
@@ -206,7 +228,7 @@ def login():
     login_user(user=form.user)
     next_page = request.args.get("next")
     if not next_page or url_parse(next_page).netloc != str():
-        next_page = url_for("play_friendly", play_from="random")
+        next_page = url_for("play_world_cup")
     response: Response = make_response(redirect(next_page))
     expiry = form.user.TOKEN_EXPIRY
     response.set_cookie("token", token, max_age=expiry, secure=CI_SECURITY, httponly=True, samesite="Strict")

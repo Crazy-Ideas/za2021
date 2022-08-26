@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <h5 class="mb-2 mt-2">
+                Round {{ match_player.match.round }} #{{ match_player.match.order }}
+                - {{ match_player.player1.name }}
+                <small>(WC Rank: {{ match_player.player1.wc_rank }}, WC Score: {{ match_player.player1.wc_score }},
+                    Overall Rank: {{ match_player.player1.rank }})</small>
+                v {{ match_player.player2.name }}
+                <small>(WC Rank: {{ match_player.player2.wc_rank }}, WC Score: {{ match_player.player2.wc_score }},
+                    Overall Rank: {{ match_player.player2.rank }})</small>
+            </h5>
+        </div>
+    </div>
+    {% if "TBD" in match_player.match.players %}
+        <p class="text-center mt-5">Cannot play a match with TBD. This is an error. Contact admin.</p>
+    {% else %}
+        <form id="selectForm" method="POST" novalidate>
+            {{ form.csrf_token() }}
+            {{ form.winner }}
+            {{ form.margin }}
+        </form>
+        <div class="row mt-2">
+            <div class="col-md">
+                <div class="lightbox" data-mdb-zoom-level="1.5">
+                    <div class="row">
+                        <div class="col-md">
+                            <div class="modal-content">
+                                <div class="btn-high-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player1 }}', '{{ mt.HiGH }}')"
+                                            type="button" class="btn btn-lg btn-success btn-floating">
+                                        H
+                                    </button>
+                                </div>
+                                <div class="btn-star-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player1 }}', '{{ mt.MEDIUM }}')"
+                                            type="button" class="btn btn-lg btn-info btn-floating">
+                                        M
+                                    </button>
+                                </div>
+                                <div class="btn-select-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player1 }}', '{{ mt.LOW }}')"
+                                            type="button" class="btn btn-lg btn-primary btn-floating">
+                                        L
+                                    </button>
+                                </div>
+                                <div class="modal-body-preview">
+                                    <img src="{{ match_player.player1.url }}"
+                                         data-mdb-img="{{ match_player.player1.url }}"
+                                         class="w-100"
+                                         alt="{{ match_player.player1.name }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div class="modal-content">
+                                <div class="btn-high-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player2 }}', '{{ mt.HiGH }}')"
+                                            type="button" class="btn btn-lg btn-success btn-floating">
+                                        H
+                                    </button>
+                                </div>
+                                <div class="btn-star-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player2 }}', '{{ mt.MEDIUM }}')"
+                                            type="button" class="btn btn-lg btn-info btn-floating">
+                                        M
+                                    </button>
+                                </div>
+                                <div class="btn-select-wrapper">
+                                    <button onclick="selectPlayer('{{ match_player.match.player2 }}', '{{ mt.LOW }}')"
+                                            type="button" class="btn btn-lg btn-primary btn-floating">
+                                        L
+                                    </button>
+                                </div>
+                                <div class="modal-body-preview">
+                                    <img src="{{ match_player.player2.url }}"
+                                         data-mdb-img="{{ match_player.player2.url }}"
+                                         class="w-100"
+                                         alt="{{ match_player.player2.name }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <!--suppress JSUnresolvedVariable -->
+    <script>
+        selectPlayer = (winner, margin) => {
+            const form = document.forms["selectForm"];
+            form.winner.value = winner;
+            form.margin.value = margin;
+            form.submit();
+        }
+    </script>
+{% endblock %}

@@ -33,7 +33,8 @@ if __name__ == "__main__":
 @app.shell_context_processor
 def make_shell_context() -> dict:
     import methods
-    from main import update_url
+    import wc_methods
+    from main import update_url, generate_url
     from models import Player, Group, Series, Standing, Match, FINAL_SERIES_TYPES
     import upload
     return {
@@ -44,7 +45,9 @@ def make_shell_context() -> dict:
         "Standing": Standing,
         "Match": Match,
         "update_url": update_url,
+        "generate_url": generate_url,
         "methods": methods,
         "FINAL_SERIES_TYPES": FINAL_SERIES_TYPES,
         "game": upload,
+        "wc_methods": wc_methods
     }

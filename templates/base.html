@@ -51,14 +51,12 @@
                     <a class="nav-link" href="{{ url_for("ranked_players") }}">Players</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("view_player_groups") }}">Qualifications</a>
+                    <a class="nav-link" href="{{ url_for("view_wc_standings") }}">WC Standings</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("view_standings") }}">Standings</a>
+                    <a class="nav-link" href="{{ url_for("play_world_cup") }}">WC Play</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("view_rounds") }}">Fixture & Results</a>
-                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for("play_friendly", play_from="random") }}">Play Friendly</a>
                 </li>
@@ -68,6 +66,24 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for("play_friendly", play_from="bottom") }}">Play Bottom</a>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                       data-mdb-toggle="dropdown">
+                        Season 2021
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("view_player_groups") }}">Qualifications</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("view_standings") }}">Standings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("view_rounds") }}">Fixture & Results</a>
+                        </li>
+                    </ul>
+                </li>
+
             </ul>
         </div>
         <!-- Right elements -->
