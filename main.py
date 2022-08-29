@@ -10,7 +10,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-cloud.json"
 
 # noinspection PyPackageRequirements
 from google.cloud.storage import Client
-from models import Player, Group
+from models import Player, Group, Standing
 from methods import update_rank
 
 
@@ -52,6 +52,7 @@ def update_url(*args, **kwargs):
     update_rank(updated_players)
     update_rank(updated_players, "wc_rank", "wc_score")
     groups: List[Group] = Group.objects.get()
+    standings: List[Standing] = Standing.objects.filter_by(season=2022).get()
     for group in groups:
         players_in_this_group: List[Player] = [player for player in updated_players if player.group_name == group.name]
         group.player_count = len(players_in_this_group)
@@ -64,8 +65,13 @@ def update_url(*args, **kwargs):
         group.player_name = top_player.name
         group.url = top_player.url
         group.url_expiration = top_player.url_expiration
+        standing = next(s for s in standings if s.group_name == group.name)
+        standing.player_name = top_player.name
+        standing.url = top_player.url
+        standing.url_expiration = top_player.url_expiration
     update_rank(groups)
     Player.objects.save_all(updated_players)
     Group.objects.save_all(groups)
+    Standing.objects.save_all(standings)
     seconds: int = (datetime.now(tz=pytz.UTC) - start_time).seconds
     print(f"All urls updated in {seconds} seconds.")
