@@ -30,7 +30,7 @@ def generate_url(player: Player) -> Optional[Player]:
 
 # noinspection PyUnusedLocal
 def update_url(*args, **kwargs):
-    max_workers: int = 100
+    max_workers: int = 10
     print("Update url process started")
     start_time = datetime.now(tz=pytz.UTC)
     players: List[Player] = Player.objects.get()
