@@ -157,6 +157,12 @@ class Group(FirestoreDocument):
     def locked_str(self) -> str:
         return "Yes" if self.qualification_locked else ("No" if self.player_count >= 9 else "Disqualified")
 
+    def init_score(self):
+        self.played = 0
+        self.won = 0
+        self.score = "0" * 10
+        self.rank = 0
+
     def update_score(self, played: int, won: int = 0):
         self.played += played
         self.won += won

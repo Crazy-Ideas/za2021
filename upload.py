@@ -112,6 +112,7 @@ def _score_groups():
             continue
         update_groups.append(group)
         group.player_count = len(group_players)
+        group.init_score()
         played = sum(player.played for player in group_players)
         won = sum(player.won for player in group_players)
         group.update_score(played, won)
@@ -175,3 +176,57 @@ def upload_players():
             print(f"{(index + 1) / total_files:.0%} completed in {seconds} seconds.")
     Player.objects.create_all(Player.objects.to_dicts(new_players))
     print(f"{len(new_players)} players uploaded in {seconds} seconds.")
+
+
+def reset_player_score(player_name: str):
+    player: Player = Player.objects.filter_by(name=player_name).first()
+    if not player:
+        print("Player not found.")
+        return
+    matches: List[Match] = Match.objects.filter("players", Match.objects.ARRAY_CONTAINS, player_name).get()
+    if not matches:
+        print("Player has not played any matches.")
+        return
+    with open("temp/player.json") as file:
+        json_players = Munch.fromDict(json.load(file))
+    json_matches = [p for p in json_players if p.name == player_name]
+    if not json_matches:
+        print("New Player. No matches in json file.")
+    player.init_score()
+    won = sum(len(p.won) for p in json_matches)
+    lost = sum(len(p.lost) for p in json_matches)
+    player.update_score(won + lost, won)
+    played = sum(1 for m in matches if player.name in m.players)
+    won = sum(1 for m in matches if player.name == m.winner)
+    player.update_score(played, won)
+    player.save()
+    print("Player score updated.")
+
+
+def rename_player_matches(old_name: str, new_name: str):
+    player = Player.objects.filter_by(name=old_name).first()
+    if player:
+        print("Player with old name exists. No action done.")
+        return
+    player = Player.objects.filter_by(name=new_name).first()
+    if not player:
+        print("Player with new name does not exists. No action done.")
+        return
+    matches = Match.objects.filter("players", Match.objects.ARRAY_CONTAINS, old_name).get()
+    if not matches:
+        print("Player with old name has not played any matches. No action done.")
+        return
+    for match in matches:
+        if match.player1 == old_name:
+            match.player1 = new_name
+        if match.player2 == old_name:
+            match.player2 = new_name
+        if match.winner == old_name:
+            match.winner = new_name
+        match.players.remove(old_name)
+        match.players.append(new_name)
+        print(match)
+    Match.objects.save_all(matches)
+    print("Matches updated.")
+    reset_player_score(new_name)
+    return
