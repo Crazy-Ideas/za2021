@@ -21,28 +21,31 @@ def generate_url(player: Player) -> Optional[Player]:
     if not filename:
         print(f"{player} Storage Image does not exists.")
         return None
-    expiration: timedelta = timedelta(days=7)
+    expiration: timedelta = timedelta(days=365)
     player_with_url: Player = deepcopy(player)
-    player_with_url.url = bucket.blob(filename).generate_signed_url(version="v4", expiration=expiration)
+    player_with_url.url = bucket.blob(filename).generate_signed_url(version="v2", expiration=expiration)
     player_with_url.url_expiration = datetime.now(tz=pytz.UTC) + expiration
     return player_with_url
 
 
 # noinspection PyUnusedLocal
 def update_url(*args, **kwargs):
-    max_workers: int = 10
+    max_workers: int = 30
     print("Update url process started")
     start_time = datetime.now(tz=pytz.UTC)
     players: List[Player] = Player.objects.get()
+    players.sort(key=lambda item: item.url_expiration)
     player_count: int = len(players)
+    batch_count: int = len(players) // 50
+    updated_players: List[Player] = players[batch_count:]
+    players = players[:batch_count]
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         threads: set = set()
         for player in players:
             threads.add(executor.submit(generate_url, player))
             thread_count: int = len(threads)
-            if thread_count in {1, player_count} or thread_count % max_workers == 0:
-                print(f"{thread_count} of {player_count} threads created.")
-        updated_players: List[Player] = list()
+            if thread_count in {1, batch_count} or thread_count % max_workers == 0:
+                print(f"{thread_count} of {batch_count} threads created.")
         for future in as_completed(threads):
             if future.result():
                 updated_players.append(future.result())
