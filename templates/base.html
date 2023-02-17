@@ -50,13 +50,20 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for("ranked_players") }}">Players</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("view_wc_standings") }}">WC Standings</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                       data-mdb-toggle="dropdown">
+                        Season 2022
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("s2022.view_wc_standings") }}">Standings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("s2022.play_world_cup") }}">Play</a>
+                        </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("play_world_cup") }}">WC Play</a>
-                </li>
-
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for("play_friendly", play_from="random") }}">Play Friendly</a>
                 </li>

@@ -10,12 +10,11 @@ from flask_login import login_user, current_user, logout_user
 from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
-from forms import QualificationForm, LoginForm, PlayForm, PlayFriendlyForm, PlayWorldCupForm
+from forms import QualificationForm, LoginForm, PlayForm, PlayFriendlyForm
 from methods import get_standings_with_url, get_round_groups, get_next_series, get_match_group, update_results, \
     update_rank_and_save
-from models import Group, Player, User, Standing, Series, Match, MarginTag
+from models import Group, Player, User, Standing, Series, Match
 from utils import RoundGroup, get_season, MatchGroup, MatchPlayer
-from wc_methods import SEASON, WorldCupMatch, get_wc_match
 
 
 def cookie_login_required(route_function):
@@ -146,37 +145,6 @@ def view_group(group_name: str):
     return render_template("players_ranked.html", title=group_name, players=players)
 
 
-@app.route("/standings/wc")
-@cookie_login_required
-def view_wc_standings():
-    standings: List[Standing] = Standing.objects.filter_by(season=SEASON).get()
-    update_rank_and_save(standings, "wc_rank", "wc_score_for_ranking")
-    return render_template("wc_standings.html", standings=standings, title="World Cup 2022 - Standings")
-
-
-@app.route("/standings/wc/<group_name>")
-@cookie_login_required
-def view_wc_players_in_a_group(group_name: str):
-    players = Player.objects.filter_by(group_name=group_name).get()
-    group = Standing.objects.filter_by(group_name=group_name, season=SEASON).first()
-    title = f"{group.wc_rank}  {group.group_fullname}   S={group.wc_score}"
-    players.sort(key=lambda item: (item.wc_played, item.wc_score), reverse=True)
-    return render_template("wc_players.html", title=title, players=players)
-
-
-@app.route("/play/wordcup", methods=["GET", "POST"])
-@cookie_login_required
-def play_world_cup():
-    wc_match: WorldCupMatch = get_wc_match()
-    if not wc_match:
-        return redirect(url_for("view_wc_standings"))
-    form: PlayWorldCupForm = PlayWorldCupForm(wc_match)
-    if not form.validate_on_submit():
-        return render_template("wc_play.html", mt=MarginTag, match_player=wc_match, title="Play World Cup", form=form)
-    wc_match.update_result(form.winner.data, form.margin.data)
-    return redirect(url_for("play_world_cup"))
-
-
 @app.route("/play/friendly", methods=["GET", "POST"])
 @cookie_login_required
 def play_friendly():
@@ -238,7 +206,7 @@ def login():
     login_user(user=form.user)
     next_page = request.args.get("next")
     if not next_page or url_parse(next_page).netloc != str():
-        next_page = url_for("play_world_cup")
+        next_page = url_for("s2022.play_world_cup")
     response: Response = make_response(redirect(next_page))
     expiry = form.user.TOKEN_EXPIRY
     response.set_cookie("token", token, max_age=expiry, secure=CI_SECURITY, httponly=True, samesite="Strict")

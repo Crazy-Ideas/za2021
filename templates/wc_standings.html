@@ -38,7 +38,7 @@
                     {% for standing in standing_batch %}
                         <div class="col-md-2 mt-1">
                             <div class="modal-body-preview">
-                                <a href="{{ url_for('view_wc_players_in_a_group', group_name=standing.group_name) }}">
+                                <a href="{{ url_for('s2022.view_wc_players_in_a_group', group_name=standing.group_name) }}">
                                     <img src="{{ standing.url }}"
                                          alt="{{ standing.group_fullname }}"
                                          class="img-fluid"/>

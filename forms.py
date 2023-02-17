@@ -3,9 +3,8 @@ from typing import List
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, HiddenField, ValidationError, StringField, PasswordField, SubmitField
 
-from models import Player, Group, User, MarginTag
+from models import Player, Group, User
 from utils import MatchGroup, MatchPlayer
-from wc_methods import WorldCupMatch
 
 
 class QualificationForm(FlaskForm):
@@ -106,23 +105,6 @@ class PlayFriendlyForm(FlaskForm):
     def validate_loser(self, loser: HiddenField):
         if loser.data not in self.match_player.match.players:
             raise ValidationError("Invalid loser")
-
-
-class PlayWorldCupForm(FlaskForm):
-    winner = HiddenField()
-    margin = HiddenField()
-
-    def __init__(self, match: WorldCupMatch, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.match_player = match
-
-    def validate_winner(self, winner: HiddenField):
-        if winner.data not in self.match_player.match.players:
-            raise ValidationError("Invalid winner")
-
-    def validate_margin(self, margin: HiddenField):
-        if margin.data not in {MarginTag.HIGH, MarginTag.LOW, MarginTag.MEDIUM}:
-            raise ValidationError("Invalid Margin")
 
 
 class LoginForm(FlaskForm):

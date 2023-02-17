@@ -24,6 +24,10 @@ def load_user(email: str) -> Optional[User]:
     return user
 
 
+from s2022 import bp as world_cup_bp
+
+app.register_blueprint(world_cup_bp)
+
 from routes import *
 
 if __name__ == "__main__":
@@ -33,7 +37,7 @@ if __name__ == "__main__":
 @app.shell_context_processor
 def make_shell_context() -> dict:
     import methods
-    import wc_methods
+    from s2022 import wc_methods
     from main import update_url, generate_url
     from models import Player, Group, Series, Standing, Match, FINAL_SERIES_TYPES
     import upload
