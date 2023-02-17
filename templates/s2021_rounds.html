@@ -10,7 +10,7 @@
         {% for week in range(1, 9) %}
             <li class="nav-item" role="presentation">
                 <a class="nav-link {% if week == current_week %}active{% endif %}" id="week-nav-{{ loop.index }}"
-                   href="{{ url_for("rounds_for_week", season=current_user.season, week=week) }}">
+                   href="{{ url_for("s2021.rounds_for_week", season=current_user.season, week=week) }}">
                     Week {{ week }}
                 </a>
             </li>
@@ -49,7 +49,7 @@
                                                 {% if ss.series.is_setup_done %}
                                                     <p class="small">{{ ss.series.group_name1 }}
                                                         - {{ ss.series.group_name2 }}</p>
-                                                    <a href="{{ url_for("view_series", series_id=ss.series.id) }}">
+                                                    <a href="{{ url_for("s2021.view_series", series_id=ss.series.id) }}">
                                                         {{ ss.series.scores[0] }} - {{ ss.series.scores[1] }}
                                                     </a>
                                                 {% endif %}

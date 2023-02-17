@@ -53,7 +53,7 @@
                     <td>{{ group.group_rank_str }}</td>
                     <td>{{ group.rank_average_str }}</td>
                     <td>
-                        <a href="{{ url_for('players_in_a_group', group_id=group.id) }}"
+                        <a href="{{ url_for('s2021.players_in_a_group', group_id=group.id) }}"
                            class="btn btn-primary btn-floating btn-lg">
                             <i class="fas fa-folder-open"></i>
                         </a>
@@ -109,7 +109,7 @@
                 e.target.querySelector("img").src = img.src;
             }
             const openButton = document.getElementById("openGroupModal");
-            openButton.href = "{{ url_for('players_in_a_group', group_id='group_id_placeholder') }}";
+            openButton.href = "{{ url_for('s2021.players_in_a_group', group_id='group_id_placeholder') }}";
             openButton.href = openButton.href.replace("group_id_placeholder", img.dataset.ciGroupId);
         });
     </script>

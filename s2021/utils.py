@@ -2,6 +2,7 @@ from typing import Tuple, List, Optional
 
 from flask_login import current_user
 
+from methods import MatchPlayer
 from models import SERIES_TYPES, BYE_SERIES_TYPES, FINAL_SERIES_TYPES, Standing, Series, Match, Player, WINNER, \
     DECIDER, INITIAL1, INITIAL2, FINAL
 
@@ -27,40 +28,6 @@ class MatchGroup:
 
     def lost_count(self, name: str) -> int:
         return sum(1 for match_player in self.past_matches if match_player.match.loser == name)
-
-
-class MatchPlayer:
-    def __init__(self):
-        self.match: Match = Match()
-        self.player1: Player = Player()
-        self.player2: Player = Player()
-
-    def __repr__(self):
-        return f"{self.match}"
-
-    @property
-    def winner_group_name(self) -> str:
-        if not self.match.winner:
-            return str()
-        return self.player1.group_name if self.match.winner == self.player1.name else self.player2.group_name
-
-    @property
-    def loser_group_name(self) -> str:
-        if not self.match.winner:
-            return str()
-        return self.player1.group_name if self.match.winner != self.player1.name else self.player2.group_name
-
-    @property
-    def winner(self) -> Optional[Player]:
-        if not self.match.winner:
-            return None
-        return self.player1 if self.match.winner == self.player1.name else self.player2
-
-    @property
-    def loser(self) -> Optional[Player]:
-        if not self.match.winner:
-            return None
-        return self.player1 if self.match.winner != self.player1.name else self.player2
 
 
 class RoundGroup:
