@@ -1,4 +1,3 @@
-from copy import copy
 from typing import List
 
 from munch import Munch
@@ -7,7 +6,7 @@ from adventure.errors import InvalidRequestTypeWhileCreatingRequest
 
 
 class RequestType:
-    PLAY_RESULT = Munch(season=int(), round=int(), winner=str())
+    PLAY_RESULT = Munch(season=int(), round=int(), winner=str(), acquired=bool())
     CREATE_SEASON = Munch()
 
 
@@ -16,13 +15,13 @@ class StandardResponse:
     INVALID_PREFIX = "Invalid request. Only "
     INVALID_DATA_TYPE = "Invalid data type."
 
-    def __init__(self, request: Munch = None, request_type: Munch = None):
+    def __init__(self, request: dict = None, request_type: Munch = None):
         self.message: Munch = Munch()
         self.message.error = str()
         self.message.warning = str()
         self.message.success = str()
         self.error_fields: Munch = Munch()
-        self.request: Munch = Munch() if request is None else copy(request)
+        self.request: Munch = Munch() if request is None else Munch.fromDict(request)
         self.data: List = list()
         if request is None:
             return

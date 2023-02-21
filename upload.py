@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from itertools import groupby
 from typing import List
 
 import pytz
@@ -230,3 +231,16 @@ def rename_player_matches(old_name: str, new_name: str):
     print("Matches updated.")
     reset_player_score(new_name)
     return
+
+
+def update_json():
+    players: List[Player] = Player.objects.get()
+    player_list: List[str] = [player.name for player in players]
+    with open("temp/player_names.json", "w") as file:
+        json.dump(player_list, file)
+    players.sort(key=lambda item: item.group_name)
+    groupwise_players: dict = {group_name: [player.name for player in grouped_players]
+                               for group_name, grouped_players in groupby(players, key=lambda item: item.group_name)}
+    with open("temp/groupwise_players.json", "w") as file:
+        json.dump(groupwise_players, file, indent=2)
+    print("Files written.")

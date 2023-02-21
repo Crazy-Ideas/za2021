@@ -16,3 +16,11 @@ class AdventuresNeedToBeSetBeforeOpponents(Exception):
 
 class OpponentGroupSelectionHappensAfterRoundIsOver(Exception):
     pass
+
+
+class OpponentRemovedFromRemainingOpponents(Exception):
+    pass
+
+
+class NewRoundCreatedAfterRoundIsOver(Exception):
+    pass

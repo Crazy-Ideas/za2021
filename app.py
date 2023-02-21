@@ -6,6 +6,10 @@ from flask_login import LoginManager
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-cloud.json"
 
+# Load emulator with data
+# firebase emulators:start --import ./temp/firestore_export
+
+
 from models import User
 from secret import SecretConfig
 
