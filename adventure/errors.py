@@ -24,3 +24,7 @@ class OpponentRemovedFromRemainingOpponents(Exception):
 
 class NewRoundCreatedAfterRoundIsOver(Exception):
     pass
+
+
+class UpdateUrlError(Exception):
+    pass

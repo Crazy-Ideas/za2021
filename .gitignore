@@ -7,3 +7,8 @@ __pycache__
 *.csv
 google-cloud.json
 secret.py
+firebase.json
+firestore-debug.log
+ui-debug.log
+.firebaserc
+firebase-debug.log

@@ -8,7 +8,13 @@ from adventure.errors import InvalidRequestTypeWhileCreatingRequest
 class RequestType:
     PLAY_RESULT = Munch(season=int(), round=int(), winner=str(), acquired=bool())
     CREATE_SEASON = Munch()
+    NEXT_MATCH = Munch()
 
+
+class SuccessMessage:
+    NEXT_MATCH = "Next match up ready."
+    CREATE_SEASON = "New season created successfully."
+    PLAY_RESULT = NEXT_MATCH
 
 class StandardResponse:
     EMPTY_RESPONSE = "Invalid request. Request cannot be empty."

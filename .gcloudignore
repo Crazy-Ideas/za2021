@@ -7,3 +7,4 @@ venv/
 .idea/
 .git/
 .gitignore
+/temp/firestore_export

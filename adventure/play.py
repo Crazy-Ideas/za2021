@@ -1,11 +1,13 @@
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from random import sample, shuffle
-from typing import List
+from typing import List, Callable
 
 from munch import Munch
 
+from adventure.errors import UpdateUrlError
 from adventure.models import Adventure
-from adventure.response import StandardResponse, RequestType
+from adventure.response import StandardResponse, RequestType, SuccessMessage
 from models import Group, Player
 
 
@@ -42,7 +44,7 @@ def create_season() -> Munch:
     opponent_group: Group = next(group for group in groups if group.name == opponent_group_name)
     new_adventure.set_opponent(opponent_group, groupwise_players[opponent_group_name])
     new_adventure.create()
-    rsp.message.success = "New season created successfully."
+    rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
 
 
@@ -70,6 +72,29 @@ def update_play_result(request: dict) -> Munch:
     return get_next_match(rsp, new_round)
 
 
+def get_urls(input_player_names: Munch) -> Munch:
+    player_urls: Munch = Munch.fromDict({key: [{"name": name, "url": str(), "rank": int()} for name in player_list]
+                                         for key, player_list in input_player_names.items()})
+    player_names: List[str] = [name for _, player_list in input_player_names.items() for name in player_list]
+    with ThreadPoolExecutor() as executor:
+        task_list: List[Callable] = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
+        threads = [executor.submit(task) for task in task_list]
+        players = [future.result() for future in as_completed(threads)]
+
+    def update_player_url(player: Player):
+        for key, player_list in player_urls.items():
+            for index, _ in enumerate(player_list):
+                if player_urls[key][index].name == player.name:
+                    player_urls[key][index].url = player.url
+                    player_urls[key][index].rank = player.rank
+                    return
+        raise UpdateUrlError
+
+    for player_record in players:
+        update_player_url(player_record)
+    return player_urls
+
+
 def get_next_match(response: StandardResponse = None, adventure: Adventure = None) -> Munch:
     rsp = StandardResponse() if response is None else response
     current_adventure: Adventure = get_latest_adventure() if adventure is None else adventure
@@ -77,12 +102,12 @@ def get_next_match(response: StandardResponse = None, adventure: Adventure = Non
         rsp.message.error = f"Create a new season to play again."
         return rsp.dict
     adventurer, opponent = current_adventure.next_match_up()
-    players: List[Player] = Player.objects.filter("name", Player.objects.IN, [adventurer, opponent]).get()
-    adventurer_url = players[0].url if players[0].name == adventurer else players[1].url
-    opponent_url = players[0].url if players[0].name == opponent else players[1].url
+    player_urls = get_urls(Munch(adventurer=[adventurer], opponent=[opponent]))
     data = Munch(season=current_adventure.season, round=current_adventure.round, adventurer=adventurer,
-                 adventurer_url=adventurer_url, opponent=opponent, opponent_url=opponent_url,
-                 score=current_adventure.score, size=current_adventure.adventurers)
+                 adventurer_url=player_urls.adventurer[0].url, adventurer_rank=player_urls.adventurer[0].rank,
+                 opponent=opponent, opponent_url=player_urls.opponent[0].url,
+                 opponent_rank=player_urls.opponent[0].rank, score=current_adventure.score,
+                 size=current_adventure.adventurers_count)
     rsp.data.append(data)
-    rsp.message.success = "Next match up ready."
+    rsp.message.success = SuccessMessage.NEXT_MATCH
     return rsp.dict
