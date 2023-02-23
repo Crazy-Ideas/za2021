@@ -6,7 +6,7 @@ from adventure.errors import InvalidRequestTypeWhileCreatingRequest
 
 
 class RequestType:
-    PLAY_RESULT = Munch(season=int(), round=int(), winner=str(), acquired=bool())
+    PLAY_RESULT = Munch(season=int(), round=int(), winner=str(), loser=str(), acquired=bool())
     CREATE_SEASON = Munch()
     NEXT_MATCH = Munch()
 
@@ -42,11 +42,11 @@ class StandardResponse:
             field_list = ", ".join([field for field in valid_fields])
             if count == 1:
                 self.message.error = f"{self.INVALID_PREFIX}1 field ({field_list}) allowed and it is mandatory."
-            else:
-                self.message.error = f"{self.INVALID_PREFIX}{count} fields ({field_list}) allowed and they are mandatory."
+                return
+            self.message.error = f"{self.INVALID_PREFIX}{count} fields ({field_list}) allowed and they are mandatory."
             return
         for field, value in request.items():
-            error = str() if isinstance(value, type(request_type.__getattribute__(field))) else self.INVALID_DATA_TYPE
+            error = str() if isinstance(value, type(getattr(request_type, field))) else self.INVALID_DATA_TYPE
             self.message.error = error
             setattr(self.error_fields, field, error)
         return

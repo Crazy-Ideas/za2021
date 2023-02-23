@@ -28,3 +28,11 @@ class NewRoundCreatedAfterRoundIsOver(Exception):
 
 class UpdateUrlError(Exception):
     pass
+
+
+class GroupwiseFileError(Exception):
+    pass
+
+
+class UnableToSetOpponent(Exception):
+    pass

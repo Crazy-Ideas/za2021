@@ -6,7 +6,7 @@ from firestore_ci import FirestoreDocument
 
 from adventure.errors import InvalidWinner, NextMatchUpNotPossibleWhenRoundOver, AdventuresNeedToBeSetBeforeOpponents, \
     OpponentRemovedFromRemainingOpponents, \
-    NewRoundCreatedAfterRoundIsOver
+    NewRoundCreatedAfterRoundIsOver, UnableToSetOpponent
 from models import Group
 
 
@@ -62,8 +62,8 @@ class Adventure(FirestoreDocument):
     def is_opponent(self, name: str) -> bool:
         return name in self.opponents
 
-    def is_winner_valid(self, winner: str) -> bool:
-        return winner in self.next_match_up()
+    def has_player_played_current_match(self, player: str) -> bool:
+        return player in self.next_match_up()
 
     def is_adventurer_or_opponent(self, name: str) -> bool:
         return self.is_adventurer(name) or self.is_opponent(name)
@@ -89,13 +89,14 @@ class Adventure(FirestoreDocument):
         # Opponent is the winner
         self.opponent_score += 1
         self.released.append(self.adventurers[self.opponents.index(winner)])
+        if not self.remaining_opponents:
+            return
         remaining_groups: List[str] = [opponent[:2] for opponent in self.remaining_opponents]
-        opponent_group = self.opponents.index(winner)[:2]
-        if opponent_group not in remaining_groups:
+        opponent_group = self.opponents[self.opponents.index(winner)][:2]
+        if opponent_group not in remaining_groups:  # The opponent has already played
             return
         opponent_index = remaining_groups.index(opponent_group)
-        self.remaining_opponents_player_count[opponent_index] = self.remaining_opponents_player_count[
-                                                                    opponent_index] + 1
+        self.remaining_opponents_player_count[opponent_index] += 1
         return
 
     def get_proximity(self) -> List[Tuple[str, int]]:
@@ -109,7 +110,7 @@ class Adventure(FirestoreDocument):
             [opponent for opponent in remaining_opponents[limit:] if opponent[1] == remaining_opponents[limit - 1]])
         return near_opponents
 
-    def get_next_opponent(self) -> str:
+    def get_next_opponent(self) -> str:  # return the group name of the next opponent.
         proximity_list: List[Tuple[str, int]] = self.get_proximity()
         if not proximity_list:
             return str()
@@ -120,6 +121,8 @@ class Adventure(FirestoreDocument):
     def set_opponent(self, group: Group, player_names: List[str]) -> None:
         if not self.adventurers:
             raise AdventuresNeedToBeSetBeforeOpponents
+        if not group or not player_names:
+            raise UnableToSetOpponent
         self.opponent_star_player_name = group.player_name
         self.opponent_fullname = group.fullname
         self.opponents = [player_name for player_name in player_names if player_name not in self.adventurers]
@@ -136,6 +139,12 @@ class Adventure(FirestoreDocument):
         if self.is_round_over():
             raise NextMatchUpNotPossibleWhenRoundOver
         return self.adventurers[self.matches_played], self.opponents[self.matches_played]
+
+    def get_loser(self, winner) -> str:
+        adventurer, opponent = self.next_match_up()
+        if winner not in (adventurer, opponent):
+            raise InvalidWinner
+        return adventurer if winner == opponent else opponent
 
 
 Adventure.init()
