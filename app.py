@@ -26,9 +26,11 @@ def load_user(email: str) -> Optional[User]:
 
 from s2022 import bp as world_cup_bp
 from s2021 import bp as s2021_bp
+from adventure import bp as adventure_bp
 
 app.register_blueprint(world_cup_bp)
 app.register_blueprint(s2021_bp)
+app.register_blueprint(adventure_bp)
 
 from routes import *
 

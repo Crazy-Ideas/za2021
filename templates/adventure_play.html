@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <div class="lightbox">
+        <div class="row">
+            <div class="col-md pt-2 mt-2 ">
+                <div class="modal-body-preview">
+                    <img src="{{ adventurer_url }}" class="img-fluid" alt=" {{ adventurer }} ({{ adventurer_rank }})"
+                         height="200"/>
+                    <div class="round-image-gradient"></div>
+                    <div class="preview-name-container small font-weight-bold text-white">
+                        {{ adventurer }} ({{ adventurer_rank }})
+                    </div>
+                </div>
+            </div>
+            <div class="col-md pt-2 mt-2">
+                <div class="modal-body-preview">
+                    <img src="{{ opponent_url }}" class="img-fluid" alt="{{ opponent }} ({{ opponent_rank }})"/>
+                    <div class="round-image-gradient"></div>
+                    <div class="preview-name-container small font-weight-bold text-white">
+                        {{ opponent }} ({{ opponent_rank }})
+                    </div>
+                </div>
+            </div>
+            <div class="col-md pt-2 mt-2">
+                <div class="card ">
+                    <div class="card-img-top">
+                        <div class="row">
+                            <div class="col">
+                                <div class="modal-body-preview">
+                                    <img src="{{ adventurer_url }}" class="img-fluid"
+                                         alt=" {{ adventurer }} ({{ adventurer_rank }})"
+                                         height="200"/>
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ adventurer }} ({{ adventurer_rank }})
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="col">
+                                <div class="modal-body-preview">
+                                    <img src="{{ opponent_url }}" class="img-fluid"
+                                         alt="{{ opponent }} ({{ opponent_rank }})"
+                                         height="200"/>
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ opponent }} ({{ opponent_rank }})
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body pb-2">
+                        <p class="fw-bold text-muted small text-uppercase mb-1">My Score</p>
+                        <p class="fw-bold h1 mb-1">{{ score }}</p>
+                        <p class="text-muted mb-0">In this round: {{ score_in_this_round }}</p>
+                    </div>
+
+                    <div class="card-body d-flex justify-content-around ">
+                    <span>
+                        <i class="fas fa-futbol me-2 text-muted"></i>
+                        <strong class="me-1 text-muted">Round {{ round }}</strong>
+                    </span>
+                        <span>
+                        <i class="fas fa-hand-peace me-2 text-muted"></i>
+                        <strong class="me-1 text-muted">Match {{ match_number }} of {{ total_matches }}</strong>
+                    </span>
+                        <span>
+                        <i class="fas fa-male me-2 text-muted"></i>
+                        <strong class="me-1 text-muted">{{ size }}</strong>
+                    </span>
+                    </div>
+                    <hr class="hr mb-2">
+                    <div class="card-body d-flex justify-content-around py-6">
+                        <button class="btn btn-success btn-rounded">Win & Pick</button>
+                        <button class="btn btn-info btn-rounded">Win & Leave</button>
+                        <button class="btn btn-danger btn-rounded">Lose</button>
+                    </div>
+                    <hr class="hr mb-2">
+                    <div class="card-body bg-light">
+                        <p class="text-uppercase text-muted small fw-bold">Opponent</p>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-female fa-2x me-2 text-muted"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="fw-bold mb-1">{{ opponent_fullname }} ({{ opponent_group_rank }})</p>
+                                <p class="text-muted mb-0">Score {{ opponent_score }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -6,7 +6,7 @@ from typing import List, Callable, Tuple
 from munch import Munch
 
 from adventure.errors import UpdateUrlError, GroupwiseFileError, UnableToSetOpponent
-from adventure.models import Adventure
+from adventure.models import Adventure, AdventureConfig
 from adventure.response import StandardResponse, RequestType, SuccessMessage
 from models import Group, Player, Match
 
@@ -51,7 +51,7 @@ def create_season() -> Munch:
     new_adventure.season = season + 1
     new_adventure.round = 1
     groupwise_players: dict = read_groupwise_players()
-    adventurer_group_names: List[str] = sample(list(groupwise_players), k=20)
+    adventurer_group_names: List[str] = sample(list(groupwise_players), k=AdventureConfig.INITIAL_ADVENTURERS_COUNT)
     new_adventure.adventurers = [sample(groupwise_players[group_name], k=1)[0] for group_name in adventurer_group_names]
     shuffle(new_adventure.adventurers)
     groups: List[Group] = Group.objects.get()
@@ -132,9 +132,7 @@ def update_play_result(request: dict) -> Munch:
     task_list.append(adventure.save)
     with ThreadPoolExecutor(max_workers=len(task_list)) as executor:
         threads = [executor.submit(task) for task in task_list]
-        temp = [future.result() for future in as_completed(threads)]
-    # for task in task_list:
-    #     task()
+        [future.result() for future in as_completed(threads)]
     if not adventure.is_round_over():
         return get_next_match(rsp, adventure)
     if adventure.is_game_over():
@@ -172,6 +170,13 @@ def get_urls(input_player_names: Munch) -> Munch:
     return player_urls
 
 
+def get_adventure_details(adventure: Adventure) -> Munch:
+    return Munch(season=adventure.season, round=adventure.round, score=adventure.score, size=adventure.adventurers_count,
+                 opponent_score=adventure.opponent_score, match_number=adventure.matches_played + 1, total_matches=adventure.total_matches,
+                 opponent_fullname=adventure.opponent_fullname, opponent_group_rank=adventure.opponent_rank,
+                 score_in_this_round=adventure.score_in_this_round)
+
+
 def get_next_match(response: StandardResponse = None, adventure: Adventure = None) -> Munch:
     rsp = StandardResponse() if response is None else response
     current_adventure: Adventure = get_latest_adventure() if adventure is None else adventure
@@ -180,12 +185,9 @@ def get_next_match(response: StandardResponse = None, adventure: Adventure = Non
         return rsp.dict
     adventurer, opponent = current_adventure.next_match_up()
     player_urls = get_urls(Munch(adventurer=[adventurer], opponent=[opponent]))
-    data = Munch(season=current_adventure.season, round=current_adventure.round, adventurer=adventurer,
-                 adventurer_url=player_urls.adventurer[0].url, adventurer_rank=player_urls.adventurer[0].rank,
-                 opponent=opponent, opponent_url=player_urls.opponent[0].url,
-                 opponent_rank=player_urls.opponent[0].rank, score=current_adventure.score,
-                 size=current_adventure.adventurers_count, opponent_score=current_adventure.opponent_score,
-                 match_number=current_adventure.matches_played + 1, total_matches=current_adventure.total_matches)
+    data = Munch(adventurer=adventurer, adventurer_url=player_urls.adventurer[0].url, adventurer_rank=player_urls.adventurer[0].rank,
+                 opponent=opponent, opponent_url=player_urls.opponent[0].url, opponent_rank=player_urls.opponent[0].rank,
+                 **get_adventure_details(current_adventure))
     rsp.data.append(data)
     rsp.message.success = SuccessMessage.NEXT_MATCH
     return rsp.dict

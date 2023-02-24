@@ -6,8 +6,13 @@ from firestore_ci import FirestoreDocument
 
 from adventure.errors import InvalidWinner, NextMatchUpNotPossibleWhenRoundOver, AdventuresNeedToBeSetBeforeOpponents, \
     OpponentRemovedFromRemainingOpponents, \
-    NewRoundCreatedAfterRoundIsOver, UnableToSetOpponent
+    NewRoundCreatedWhileRoundIsInProgress, UnableToSetOpponent
 from models import Group
+
+
+class AdventureConfig:
+    PROXIMITY_LIMIT: int = 5  # Change this to restrict / expand the proximity list
+    INITIAL_ADVENTURERS_COUNT: int = 20  # Change this to update the initial adventurers count
 
 
 class Adventure(FirestoreDocument):
@@ -23,23 +28,24 @@ class Adventure(FirestoreDocument):
         self.matches_played: int = int()
         self.opponent_star_player_name: str = str()
         self.opponent_fullname: str = str()
+        self.opponent_rank: int = int()
         self.opponents: List[str] = list()
-        self.opponent_score: int = int()
         self.remaining_opponents: List[str] = list()
         self.remaining_opponents_player_count: List[int] = list()
 
     @classmethod
     def create_next_round(cls, adventure: 'Adventure') -> 'Adventure':
-        if adventure.is_round_over():
-            raise NewRoundCreatedAfterRoundIsOver
+        if not adventure.is_round_over():
+            raise NewRoundCreatedWhileRoundIsInProgress
         new_adventure = cls()
         new_adventure.season = adventure.season
         new_adventure.round = adventure.round + 1
         new_adventure.score = adventure.score
-        new_adventure.adventurers = [adventurer for adventurer in adventure.adventurers
-                                     if adventurer not in adventure.released]
+        new_adventure.adventurers = [adventurer for adventurer in adventure.adventurers if adventurer not in adventure.released]
         new_adventure.adventurers.extend(adventure.acquired)
         shuffle(new_adventure.adventurers)
+        new_adventure.remaining_opponents = adventure.remaining_opponents[:]
+        new_adventure.remaining_opponents_player_count = adventure.remaining_opponents_player_count[:]
         return new_adventure
 
     @property
@@ -49,6 +55,14 @@ class Adventure(FirestoreDocument):
     @property
     def adventurers_count(self) -> int:
         return len(self.adventurers) + len(self.acquired) - len(self.released)
+
+    @property
+    def opponent_score(self) -> int:
+        return len(self.released)
+
+    @property
+    def score_in_this_round(self) -> int:
+        return self.matches_played - self.opponent_score
 
     def is_round_over(self) -> bool:
         return self.matches_played == self.total_matches
@@ -87,7 +101,6 @@ class Adventure(FirestoreDocument):
                 self.acquired.append(self.opponents[self.adventurers.index(winner)])
             return
         # Opponent is the winner
-        self.opponent_score += 1
         self.released.append(self.adventurers[self.opponents.index(winner)])
         if not self.remaining_opponents:
             return
@@ -100,7 +113,7 @@ class Adventure(FirestoreDocument):
         return
 
     def get_proximity(self) -> List[Tuple[str, int]]:
-        limit = 5  # Change this to restrict / expand the proximity list
+        limit = AdventureConfig.PROXIMITY_LIMIT
         count = self.adventurers_count
         remaining_opponents = [(opponent, abs(self.remaining_opponents_player_count[index] - count))
                                for index, opponent in enumerate(self.remaining_opponents)]
@@ -125,6 +138,7 @@ class Adventure(FirestoreDocument):
             raise UnableToSetOpponent
         self.opponent_star_player_name = group.player_name
         self.opponent_fullname = group.fullname
+        self.opponent_rank = group.rank
         self.opponents = [player_name for player_name in player_names if player_name not in self.adventurers]
         shuffle(self.opponents)
         remaining_group_names = [player_name[:2] for player_name in self.remaining_opponents]

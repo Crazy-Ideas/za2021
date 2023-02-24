@@ -22,7 +22,7 @@ class OpponentRemovedFromRemainingOpponents(Exception):
     pass
 
 
-class NewRoundCreatedAfterRoundIsOver(Exception):
+class NewRoundCreatedWhileRoundIsInProgress(Exception):
     pass
 
 
