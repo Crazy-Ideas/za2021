@@ -5,7 +5,7 @@ from typing import List, Callable, Tuple
 
 from munch import Munch
 
-from adventure.errors import UpdateUrlError, GroupwiseFileError, UnableToSetOpponent
+from adventure.errors import GroupwiseFileError, UnableToSetOpponent
 from adventure.models import Adventure, AdventureConfig
 from adventure.response import StandardResponse, RequestType, SuccessMessage
 from models import Group, Player, Match
@@ -111,10 +111,10 @@ def update_play_result(request: dict) -> Munch:
         rsp.message.error = "Unable to find the adventure for this round and season."
         return rsp.dict
     if not adventure.has_player_played_current_match(rsp.request.winner):
-        rsp.message.error = rsp.message.error_fields.winner = "Winner is not from the current match."
+        rsp.message.error = rsp.error_fields.winner = "Winner is not from the current match."
         return rsp.dict
     if not adventure.has_player_played_current_match(rsp.request.loser):
-        rsp.message.error = rsp.message.error_fields.loser = "Loser is not from the current match."
+        rsp.message.error = rsp.error_fields.loser = "Loser is not from the current match."
         return rsp.dict
     if len(players) != 2:
         rsp.message.error = "Unable to find Players."
@@ -134,7 +134,8 @@ def update_play_result(request: dict) -> Munch:
         threads = [executor.submit(task) for task in task_list]
         [future.result() for future in as_completed(threads)]
     if not adventure.is_round_over():
-        return get_next_match(rsp, adventure)
+        rsp.message.success = SuccessMessage.PLAY_RESULT
+        return rsp.dict
     if adventure.is_game_over():
         result = "won" if adventure.adventurers_count > 0 else "lost"
         rsp.message.error = f"Game is over. You {result}. Create a new season to play again."
@@ -144,7 +145,8 @@ def update_play_result(request: dict) -> Munch:
     groupwise_players: dict = read_groupwise_players()
     set_opponent(new_round, groupwise_players, groups=list())
     new_round.create()
-    return get_next_match(rsp, new_round)
+    rsp.message.error = "New Round Created."
+    return rsp.dict
 
 
 def get_urls(input_player_names: Munch) -> Munch:
@@ -162,11 +164,12 @@ def get_urls(input_player_names: Munch) -> Munch:
                 if player_urls[key][index].name == player.name:
                     player_urls[key][index].url = player.url
                     player_urls[key][index].rank = player.rank
-                    return
-        raise UpdateUrlError
+        return
 
     for player_record in players:
         update_player_url(player_record)
+    for key in player_urls:
+        player_urls[key].sort(key=lambda item: item.rank)
     return player_urls
 
 
@@ -177,9 +180,9 @@ def get_adventure_details(adventure: Adventure) -> Munch:
                  score_in_this_round=adventure.score_in_this_round)
 
 
-def get_next_match(response: StandardResponse = None, adventure: Adventure = None) -> Munch:
-    rsp = StandardResponse() if response is None else response
-    current_adventure: Adventure = get_latest_adventure() if adventure is None else adventure
+def get_next_match(request: Munch) -> Munch:
+    rsp = StandardResponse(request, RequestType.NEXT_MATCH)
+    current_adventure: Adventure = get_latest_adventure()
     if not current_adventure or current_adventure.is_round_over() or current_adventure.is_game_over():
         rsp.message.error = f"Create a new season to play again."
         return rsp.dict
@@ -199,7 +202,7 @@ def get_season(request: Munch) -> Munch:
     if not adventure:
         rsp.message.error = "No adventure for this season and round number."
         return rsp.dict
-    proximity_names = groups = list()
+    proximity_names = groups = opponent_proximity = list()
     if not adventure.is_round_over():
         opponent_proximity: List[Tuple[str, int]] = adventure.get_proximity()[:10]
         proximity_names: List[str] = [opponent for opponent, _ in opponent_proximity]
@@ -216,6 +219,9 @@ def get_season(request: Munch) -> Munch:
                 return rsp.dict
             player_urls.proximity[index].fullname = group.fullname
             player_urls.proximity[index].rank = group.rank
+            player_urls.proximity[index].proximity = next(
+                proximity for opponent, proximity in opponent_proximity if opponent[:2] == group.name)
+        player_urls.proximity.sort(key=lambda item: item.proximity)
     data = Munch(**player_urls, **get_adventure_details(adventure))
     rsp.data.append(data)
     rsp.message.success = SuccessMessage.GET_SEASON
