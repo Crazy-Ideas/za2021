@@ -9,12 +9,14 @@ class RequestType:
     PLAY_RESULT = Munch(season=int(), round=int(), winner=str(), loser=str(), acquired=bool())
     CREATE_SEASON = Munch()
     NEXT_MATCH = Munch()
+    GET_SEASON = Munch(season=int(), round=int())
 
 
 class SuccessMessage:
     NEXT_MATCH = "Next match up ready."
     CREATE_SEASON = "New season created successfully."
     PLAY_RESULT = NEXT_MATCH
+    GET_SEASON = "Season retrieved successfully"
 
 class StandardResponse:
     EMPTY_RESPONSE = "Invalid request. Request cannot be empty."

@@ -1,33 +1,17 @@
 import json
 import random
 from datetime import datetime
-from functools import wraps
 from typing import List
 
 import pytz
-from flask import render_template, redirect, url_for, request, make_response, Response, current_app
+from flask import render_template, redirect, url_for, request, make_response, Response
 from flask_login import login_user, current_user, logout_user
 from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import LoginForm, PlayFriendlyForm
-from methods import update_rank_and_save, MatchPlayer
-from models import Group, Player, User, Match
-
-
-def cookie_login_required(route_function):
-    @wraps(route_function)
-    def decorated_route(*args, **kwargs):
-        if current_user.is_authenticated:
-            return route_function(*args, **kwargs)
-        token: str = request.cookies.get("token")
-        user: User = User.objects.filter_by(token=token).first()
-        if user and user.token_expiration > datetime.now(tz=pytz.UTC):
-            login_user(user=user)
-            return route_function(*args, **kwargs)
-        return current_app.login_manager.unauthorized()
-
-    return decorated_route
+from methods import update_rank_and_save, MatchPlayer, cookie_login_required
+from models import Group, Player, Match
 
 
 @app.route("/")

@@ -39,8 +39,8 @@ def set_opponent(adventure: Adventure, groupwise_players: dict, groups: List[Gro
     return
 
 
-def create_season() -> Munch:
-    rsp: StandardResponse = StandardResponse(request=Munch(), request_type=RequestType.CREATE_SEASON)
+def create_season(request: Munch) -> Munch:
+    rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CREATE_SEASON)
     current_adventure: Adventure = get_latest_adventure()
     season: int = current_adventure.season if current_adventure else 0
     if current_adventure:
@@ -190,4 +190,33 @@ def get_next_match(response: StandardResponse = None, adventure: Adventure = Non
                  **get_adventure_details(current_adventure))
     rsp.data.append(data)
     rsp.message.success = SuccessMessage.NEXT_MATCH
+    return rsp.dict
+
+
+def get_season(request: Munch) -> Munch:
+    rsp = StandardResponse(request=request, request_type=RequestType.GET_SEASON)
+    adventure: Adventure = Adventure.objects.filter_by(season=request.season, round=request.round).first()
+    if not adventure:
+        rsp.message.error = "No adventure for this season and round number."
+        return rsp.dict
+    proximity_names = groups = list()
+    if not adventure.is_round_over():
+        opponent_proximity: List[Tuple[str, int]] = adventure.get_proximity()[:10]
+        proximity_names: List[str] = [opponent for opponent, _ in opponent_proximity]
+        proximity_group_names: List[str] = [opponent[:2] for opponent, _ in opponent_proximity]
+        groups: List[Group] = Group.objects.filter("name", Group.objects.IN, proximity_group_names).get()
+    player_urls = get_urls(Munch(adventurers=adventure.adventurers, opponents=adventure.opponents, acquired=adventure.acquired,
+                                 released=adventure.released, proximity=proximity_names))
+    if not adventure.is_round_over():
+        for index, player in enumerate(player_urls.proximity):
+            try:
+                group: Group = next(grp for grp in groups if grp.name == player.name[:2])
+            except StopIteration:
+                rsp.message.error = "Unable to find the group fullname for proximity opponents."
+                return rsp.dict
+            player_urls.proximity[index].fullname = group.fullname
+            player_urls.proximity[index].rank = group.rank
+    data = Munch(**player_urls, **get_adventure_details(adventure))
+    rsp.data.append(data)
+    rsp.message.success = SuccessMessage.GET_SEASON
     return rsp.dict

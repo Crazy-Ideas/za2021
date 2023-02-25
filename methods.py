@@ -1,6 +1,12 @@
+from datetime import datetime
+from functools import wraps
 from typing import List, Union, Optional
 
-from models import Standing, Group, Player, Match
+import pytz
+from flask import request, current_app
+from flask_login import current_user, login_user
+
+from models import Standing, Group, Player, Match, User
 
 
 def update_rank_and_save(items: List[Union[Player, Group, Standing]], rank="rank", score="score"):
@@ -55,3 +61,18 @@ class MatchPlayer:
         if not self.match.winner:
             return None
         return self.player1 if self.match.winner != self.player1.name else self.player2
+
+
+def cookie_login_required(route_function):
+    @wraps(route_function)
+    def decorated_route(*args, **kwargs):
+        if current_user.is_authenticated:
+            return route_function(*args, **kwargs)
+        token: str = request.cookies.get("token")
+        user: User = User.objects.filter_by(token=token).first()
+        if user and user.token_expiration > datetime.now(tz=pytz.UTC):
+            login_user(user=user)
+            return route_function(*args, **kwargs)
+        return current_app.login_manager.unauthorized()
+
+    return decorated_route

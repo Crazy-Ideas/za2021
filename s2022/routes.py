@@ -3,9 +3,8 @@ from typing import List
 from flask import render_template, url_for
 from werkzeug.utils import redirect
 
-from methods import update_rank_and_save
+from methods import update_rank_and_save, cookie_login_required
 from models import Player, Standing, MarginTag
-from routes import cookie_login_required
 from s2022 import bp
 from s2022.forms import PlayWorldCupForm
 from s2022.wc_methods import WorldCupMatch, get_wc_match, SEASON

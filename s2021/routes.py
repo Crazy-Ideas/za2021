@@ -2,8 +2,8 @@ from typing import List, Tuple
 
 from flask import render_template, redirect, url_for
 
+from methods import cookie_login_required
 from models import Group, Player, Standing, Series
-from routes import cookie_login_required
 from s2021 import bp
 from s2021.forms import QualificationForm, PlayForm
 from s2021.methods import get_standings_with_url, get_next_series, get_round_groups, get_match_group, update_results

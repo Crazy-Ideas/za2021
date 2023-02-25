@@ -8,7 +8,7 @@ os.environ["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
 # firebase emulators:start --import ./temp/firestore_export
 
 from adventure.response import SuccessMessage
-from adventure.play import create_season, get_next_match, update_play_result
+from adventure.play import create_season, get_next_match, update_play_result, get_season
 from adventure.models import Adventure, AdventureConfig
 from models import Player
 
@@ -17,24 +17,23 @@ class AdventureTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         self.size = AdventureConfig.INITIAL_ADVENTURERS_COUNT = 3
+        self.rsp = create_season(Munch())
 
     def tearDown(self) -> None:
         Adventure.objects.delete()
 
     def test_create_season(self):
-        rsp = create_season()
-        self.assertEqual(SuccessMessage.CREATE_SEASON, rsp.message.success)
+        self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
         adventure: Adventure = Adventure.objects.first()
         self.assertEqual(self.size, adventure.adventurers_count)
         self.assertEqual(166, len(adventure.remaining_opponents))
         self.assertIn(len(adventure.opponents), [self.size - 1, self.size])
-        rsp = create_season()
+        rsp = create_season(Munch())
         self.assertEqual(str(), rsp.message.success)
         self.assertNotEqual(str(), rsp.message.error)
 
     def test_next_match_up(self):
-        rsp = create_season()
-        self.assertEqual(SuccessMessage.CREATE_SEASON, rsp.message.success)
+        self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
         rsp = get_next_match()
         self.assertEqual(SuccessMessage.NEXT_MATCH, rsp.message.success)
         self.assertNotEqual(str(), rsp.data[0].adventurer_url)
@@ -77,11 +76,7 @@ class AdventureTestCase(unittest.TestCase):
         self.assertEqual(3, rsp.data[0].match_number)
 
     def test_new_round(self):
-        rsp = create_season()
-        adventure: Adventure = Adventure.objects.first()
-        print(adventure.adventurers)
-        print(adventure.opponents)
-        self.assertEqual(SuccessMessage.CREATE_SEASON, rsp.message.success)
+        self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
         rsp = get_next_match()
         self.assertEqual(SuccessMessage.NEXT_MATCH, rsp.message.success)
         opponent_fullname = rsp.data[0].opponent_fullname
@@ -96,9 +91,13 @@ class AdventureTestCase(unittest.TestCase):
             self.assertEqual(SuccessMessage.NEXT_MATCH, rsp.message.success)
         self.assertEqual(2, rsp.data[0].round)
         self.assertNotEqual(opponent_fullname, rsp.data[0].opponent_fullname)
-        adventure: Adventure = Adventure.objects.filter_by(round=2).first()
-        print(adventure.adventurers)
-        print(adventure.opponents)
+        rsp = get_season(Munch(season=1, round=1))
+        self.assertEqual(0, len(rsp.data[0].proximity))
+
+    def test_get_season(self):
+        self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
+        rsp = get_season(Munch(season=1, round=1))
+        self.assertEqual(self.size, len(rsp.data[0].adventurers))
 
 if __name__ == '__main__':
     unittest.main()
