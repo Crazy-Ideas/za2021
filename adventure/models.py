@@ -11,7 +11,7 @@ from models import Group
 
 
 class AdventureConfig:
-    PROXIMITY_LIMIT: int = 5  # Change this to restrict / expand the proximity list
+    PROXIMITY_LIMIT: int = 12  # Change this to restrict / expand the proximity list
     INITIAL_ADVENTURERS_COUNT: int = 20  # Change this to update the initial adventurers count
 
 

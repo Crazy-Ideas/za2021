@@ -53,6 +53,20 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
                        data-mdb-toggle="dropdown">
+                        Adventure
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("adventure.play") }}">Play</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("adventure.view_last_round") }}">Season</a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                       data-mdb-toggle="dropdown">
                         Season 2022
                     </a>
                     <ul class="dropdown-menu">
@@ -64,14 +78,24 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("play_friendly", play_from="random") }}">Play Friendly</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("play_friendly", play_from="top") }}">Play Top</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for("play_friendly", play_from="bottom") }}">Play Bottom</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                       data-mdb-toggle="dropdown">
+                        Friendly
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("play_friendly", play_from="random") }}">Play
+                                Friendly</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("play_friendly", play_from="top") }}">Play Top</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for("play_friendly", play_from="bottom") }}">Play
+                                Bottom</a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"

@@ -34,7 +34,7 @@ class AdventureTestCase(unittest.TestCase):
 
     def test_next_match_up(self):
         self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
-        rsp = get_next_match()
+        rsp = get_next_match(Munch())
         self.assertEqual(SuccessMessage.NEXT_MATCH, rsp.message.success)
         self.assertNotEqual(str(), rsp.data[0].adventurer_url)
         self.assertNotEqual(str(), rsp.data[0].opponent_url)
@@ -55,6 +55,7 @@ class AdventureTestCase(unittest.TestCase):
         request.acquired = True
         rsp = update_play_result(request)
         self.assertEqual(SuccessMessage.PLAY_RESULT, rsp.message.success)
+        rsp = get_next_match(Munch())
         self.assertEqual(1, rsp.data[0].score)
         self.assertEqual(0, rsp.data[0].opponent_score)
         self.assertEqual(self.size + 1, rsp.data[0].size)
@@ -69,6 +70,7 @@ class AdventureTestCase(unittest.TestCase):
         request.acquired = False
         rsp = update_play_result(request)
         self.assertEqual(SuccessMessage.PLAY_RESULT, rsp.message.success)
+        rsp = get_next_match(Munch())
         self.assertEqual(1, rsp.data[0].score)
         self.assertEqual(1, rsp.data[0].opponent_score)
         self.assertEqual(self.size, rsp.data[0].size)
@@ -77,10 +79,11 @@ class AdventureTestCase(unittest.TestCase):
 
     def test_new_round(self):
         self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
-        rsp = get_next_match()
+        rsp = get_next_match(Munch())
         self.assertEqual(SuccessMessage.NEXT_MATCH, rsp.message.success)
         opponent_fullname = rsp.data[0].opponent_fullname
         for _ in range(self.size):
+            rsp = get_next_match(Munch())
             request = Munch()
             request.season = rsp.data[0].season
             request.round = rsp.data[0].round

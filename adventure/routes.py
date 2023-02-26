@@ -35,6 +35,8 @@ def view_last_round():
 @cookie_login_required
 def view_season(season: int, round_number: int):
     rsp = get_season(Munch(season=season, round=round_number))
+    if rsp.message.error:
+        return redirect(url_for("adventure.view_last_round"))
     return render_template("adventure_round.html", title="View Season", **rsp.data[0])
 
 
