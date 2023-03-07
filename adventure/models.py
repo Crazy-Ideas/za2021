@@ -11,7 +11,7 @@ from models import Group
 
 
 class AdventureConfig:
-    PROXIMITY_LIMIT: int = 12  # Change this to restrict / expand the proximity list
+    PROXIMITY_LIMIT: int = 10  # Change this to restrict / expand the proximity list. Higher than 10 won't have any effect
     INITIAL_ADVENTURERS_COUNT: int = 20  # Change this to update the initial adventurers count
 
 
@@ -118,10 +118,10 @@ class Adventure(FirestoreDocument):
         remaining_opponents = [(opponent, abs(self.remaining_opponents_player_count[index] - count))
                                for index, opponent in enumerate(self.remaining_opponents)]
         remaining_opponents.sort(key=itemgetter(1))
-        near_opponents: List[Tuple[str, int]] = remaining_opponents[:limit]
-        near_opponents.extend(
-            [opponent for opponent in remaining_opponents[limit:] if opponent[1] == remaining_opponents[limit - 1]])
-        return near_opponents
+        # near_opponents: List[Tuple[str, int]] = remaining_opponents[:limit]
+        # near_opponents.extend(
+        #     [opponent for opponent in remaining_opponents[limit:] if opponent[1] == remaining_opponents[limit - 1]])
+        return remaining_opponents[:limit]
 
     def get_next_opponent(self) -> str:  # return the group name of the next opponent.
         proximity_list: List[Tuple[str, int]] = self.get_proximity()
