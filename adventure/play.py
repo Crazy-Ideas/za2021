@@ -183,7 +183,7 @@ def get_adventure_details(adventure: Adventure) -> Munch:
 def get_next_match(request: Munch) -> Munch:
     rsp = StandardResponse(request, RequestType.NEXT_MATCH)
     current_adventure: Adventure = get_latest_adventure()
-    if not current_adventure or current_adventure.is_round_over() or current_adventure.is_game_over():
+    if not current_adventure or (current_adventure.is_round_over() and current_adventure.is_game_over()):
         rsp.message.error = f"Create a new season to play again."
         return rsp.dict
     adventurer, opponent = current_adventure.next_match_up()
@@ -207,7 +207,8 @@ def get_season(request: Munch) -> Munch:
         opponent_proximity: List[Tuple[str, int]] = adventure.get_proximity()[:10]
         proximity_names: List[str] = [opponent for opponent, _ in opponent_proximity]
         proximity_group_names: List[str] = [opponent[:2] for opponent, _ in opponent_proximity]
-        groups: List[Group] = Group.objects.filter("name", Group.objects.IN, proximity_group_names).get()
+        groups: List[Group] = Group.objects.filter("name", Group.objects.IN,
+                                                   proximity_group_names).get() if proximity_group_names else list()
     player_urls = get_urls(Munch(adventurers=adventure.adventurers, opponents=adventure.opponents, acquired=adventure.acquired,
                                  released=adventure.released, proximity=proximity_names))
     if not adventure.is_round_over():
