@@ -50,7 +50,7 @@ def play_friendly():
     match: Match = Match.objects.filter_by(type="friendly", winner=str()).first()
     if not match:
         if play_from == "top":
-            players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(20).get()
+            players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(100).get()
             selection: List[Player] = random.sample(players, k=2)
         elif play_from == "bottom":
             players = Player.objects.order_by("played").limit(20).get()
