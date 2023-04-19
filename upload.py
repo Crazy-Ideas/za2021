@@ -1,7 +1,9 @@
 import json
 import os
+import pickle
 from datetime import datetime
 from itertools import groupby
+from operator import itemgetter
 from typing import List
 
 import pytz
@@ -244,3 +246,18 @@ def update_json():
     with open("temp/groupwise_players.json", "w") as file:
         json.dump(groupwise_players, file, indent=2)
     print("Files written.")
+
+
+def analyze_player_rankings():
+    with open("temp/players.pickle", "rb") as file:
+        players: List[Player] = pickle.load(file)
+    players.sort(key=lambda item: (item.group_name, item.rank))
+    groupwise_players = [(group_name, sum(1 if player.rank <= 100 else 0 for player in grouped_players))
+                         for group_name, grouped_players in groupby(players, key=lambda item: item.group_name)]
+    groupwise_players.sort(key=itemgetter(1), reverse=True)
+    print(groupwise_players)
+    cumulative_team_count = 0
+    for player_count, grouped_player_count in groupby(groupwise_players, key=itemgetter(1)):
+        team_count = len([g for g in grouped_player_count])
+        cumulative_team_count += team_count
+        print(f"Player Count: {player_count:2} has {team_count} teams. (Cumulative Count: {cumulative_team_count})")
