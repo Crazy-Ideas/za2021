@@ -248,16 +248,41 @@ def update_json():
     print("Files written.")
 
 
-def analyze_player_rankings():
+def analyze_player_rankings(upto: int = -1, team_count: int = 16, player_count_per_team: int = 5):
     with open("temp/players.pickle", "rb") as file:
         players: List[Player] = pickle.load(file)
-    players.sort(key=lambda item: (item.group_name, item.rank))
-    groupwise_players = [(group_name, sum(1 if player.rank <= 100 else 0 for player in grouped_players))
-                         for group_name, grouped_players in groupby(players, key=lambda item: item.group_name)]
-    groupwise_players.sort(key=itemgetter(1), reverse=True)
-    print(groupwise_players)
-    cumulative_team_count = 0
-    for player_count, grouped_player_count in groupby(groupwise_players, key=itemgetter(1)):
-        team_count = len([g for g in grouped_player_count])
-        cumulative_team_count += team_count
-        print(f"Player Count: {player_count:2} has {team_count} teams. (Cumulative Count: {cumulative_team_count})")
+    if upto > 0:
+        players.sort(key=lambda item: (item.group_name, item.rank))
+        groupwise_players = [(group_name, sum(1 if player.rank <= upto else 0 for player in grouped_players))
+                             for group_name, grouped_players in groupby(players, key=lambda item: item.group_name)]
+        groupwise_players.sort(key=itemgetter(1), reverse=True)
+        print(groupwise_players)
+        cumulative_team_count = 0
+        for player_count, grouped_player_count in groupby(groupwise_players, key=itemgetter(1)):
+            team_count = len([g for g in grouped_player_count])
+            cumulative_team_count += team_count
+            print(f"Player Count: {player_count:2} has {team_count} teams. (Cumulative Count: {cumulative_team_count})")
+        return
+    players.sort(key=lambda item: item.rank)
+    selected_players: List[str] = list()
+    expected_count: int = team_count * player_count_per_team
+    selected_teams: set = set()
+    nominated_teams: dict = dict()
+    for player in players:
+        if player.group_name in selected_teams:
+            continue
+        if player.group_name not in nominated_teams:
+            nominated_teams[player.group_name] = list()
+        nominated_teams[player.group_name].append(player.name)
+        if len(nominated_teams[player.group_name]) != player_count_per_team:
+            continue
+        selected_teams.add(player.group_name)
+        selected_players.extend(nominated_teams[player.group_name])
+        if len(selected_players) >= expected_count:
+            break
+    print(selected_players)
+
+
+def update_players_pickle():
+    with open("temp/players.pickle", "wb") as file:
+        pickle.dump(Player.objects.get(), file)
