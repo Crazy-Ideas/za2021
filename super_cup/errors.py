@@ -8,3 +8,15 @@ class GroupAlreadyInitialized(Exception):
 
 class InvalidNumberOfPlayersProvidedForInitialization(Exception):
     pass
+
+
+class SeriesNotCompleted(Exception):
+    pass
+
+
+class GroupNotInitialized(Exception):
+    pass
+
+
+class SeriesCompleted(Exception):
+    pass
