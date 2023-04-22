@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from random import shuffle
 from typing import List, Callable
 
 from munch import Munch
@@ -10,7 +11,7 @@ from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 def select_players(group_count: int, player_count_per_group: int) -> List[Player]:
     players: List[Player] = Player.objects.get()
-    players.sort(key=lambda item: item.score)
+    players.sort(key=lambda item: item.rank, reverse=False)
     selected_players: List[Player] = list()
     expected_count: int = group_count * player_count_per_group
     selected_groups: set = set()
@@ -43,10 +44,10 @@ def get_latest_series() -> CupSeries:
     return series
 
 
-def initialize_series(series: CupSeries, players: List[Player], groups: List[Group], start_index: int, player_count_per_group: int):
-    players_in_this_series: List[Player] = players[start_index: start_index + player_count_per_group]
-    group_in_this_series: Group = next(group for group in groups if group.name == players_in_this_series[0].group_name)
-    series.initialize_group(group_in_this_series, players_in_this_series)
+def initialize_series(series: CupSeries, players: List[Player], groups: List[Group], group_index: int) -> int:
+    players_in_this_series: List[Player] = [player for player in players if player.group_name == groups[group_index].name]
+    series.initialize_group(groups[group_index], players_in_this_series)
+    return group_index + 1
 
 
 def create_season(request: Munch) -> Munch:
@@ -64,17 +65,17 @@ def create_season(request: Munch) -> Munch:
     group_names: List[str] = list({player.group_name for player in selected_players})
     get_group_tasks: List[Callable] = [Group.objects.filter_by(name=group_name).first for group_name in group_names]
     groups: List[Group] = perform_io_task(get_group_tasks)
+    shuffle(groups)
     series_to_be_created: List[CupSeries] = list()
+    group_index: int = 0
     for round_number in range(1, round_calculator.total_rounds + 1):
         for match_number in range(1, round_calculator.total_matches_per_round(round_number) + 1):
             series: CupSeries = CupSeries(new_season, round_number, match_number, group_count, player_count_per_group)
             series_to_be_created.append(series)
             if round_number != 1:
                 continue
-            players_start_index: int = (match_number - 1) * player_count_per_group * 2
-            initialize_series(series, selected_players, groups, players_start_index, player_count_per_group)
-            players_start_index += player_count_per_group
-            initialize_series(series, selected_players, groups, players_start_index, player_count_per_group)
+            group_index = initialize_series(series, selected_players, groups, group_index)
+            group_index = initialize_series(series, selected_players, groups, group_index)
     CupSeries.objects.create_all(CupSeries.objects.to_dicts(series_to_be_created))
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict

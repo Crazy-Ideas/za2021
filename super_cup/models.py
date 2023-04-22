@@ -22,7 +22,8 @@ class CupSeries(FirestoreDocument):
     PLAYER1: str = "player1"
     PLAYER2: str = "player2"
 
-    def __init__(self, season: int, round_number: int, match_number: int, total_group_count: int, player_per_group: int):
+    def __init__(self, season: int = 0, round_number: int = 0, match_number: int = 0, total_group_count: int = 0,
+                 player_per_group: int = 0):
         super().__init__()
         self.season: int = season
         self.round_number: int = round_number
@@ -52,13 +53,10 @@ class CupSeries(FirestoreDocument):
         return
 
     def initialize_matches(self):
-        player_indices: List[Tuple[int, int]] = list(product(range(self.player_per_group, self.player_per_group)))
-        player1_names = self.player1_names[:]
-        player2_names = self.player2_names[:]
-        shuffle(player1_names)
-        shuffle(player2_names)
-        self.match_player1_names = [player1_names[player_index[0]] for player_index in player_indices]
-        self.match_player2_names = [player2_names[player_index[1]] for player_index in player_indices]
+        player_indices: List[Tuple[int, int]] = list(product(range(self.player_per_group), range(self.player_per_group)))
+        shuffle(player_indices)
+        self.match_player1_names = [self.player1_names[player_index[0]] for player_index in player_indices]
+        self.match_player2_names = [self.player2_names[player_index[1]] for player_index in player_indices]
 
     def copy_group(self, series: 'CupSeries'):
         player_type, index = self.get_player_type_and_index()
@@ -108,11 +106,19 @@ class CupSeries(FirestoreDocument):
     def group2_rank(self) -> int:
         return self.group_ranks[1]
 
+    @property
+    def star_player1(self) -> str:
+        return self.player1_names[0] if self.player1_names else CupConfig.TBD
+
+    @property
+    def star_player2(self) -> str:
+        return self.player2_names[0] if self.player2_names else CupConfig.TBD
+
     def get_group1_url(self, players: List[Player]) -> str:
-        return self.get_url(players, self.player1_names[0] if self.player1_names else CupConfig.TBD)
+        return self.get_url(players, self.star_player1)
 
     def get_group2_url(self, players: List[Player]) -> str:
-        return self.get_url(players, self.player2_names[0] if self.player2_names else CupConfig.TBD)
+        return self.get_url(players, self.star_player2)
 
     @property
     def group1_score(self):
