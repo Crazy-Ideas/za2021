@@ -14,9 +14,9 @@ def play():
     rsp = get_next_match(Munch())
     if rsp.message.error:
         return redirect(url_for("adventure.view_last_round"))
-    form = PlayForm(rsp.data[0].season, rsp.data[0].round, rsp.data[0].adventurer, rsp.data[0].opponent)
+    form = PlayForm(rsp.data.season, rsp.data.round, rsp.data.adventurer, rsp.data.opponent)
     if not form.validate_on_submit():
-        return render_template("adventure_play.html", **rsp.data[0], title="Play Adventure", form=form)
+        return render_template("adventure_play.html", **rsp.data, title="Play Adventure", form=form)
     if form.rsp.message.error:
         return redirect(url_for("adventure.view_last_round"))
     return redirect(url_for("adventure.play"))
@@ -37,7 +37,7 @@ def view_season(season: int, round_number: int):
     rsp = get_season(Munch(season=season, round=round_number))
     if rsp.message.error:
         return redirect(url_for("adventure.view_last_round"))
-    return render_template("adventure_round.html", title="View Season", **rsp.data[0])
+    return render_template("adventure_round.html", title="View Season", **rsp.data)
 
 
 @bp.route("/adventure/seasons")

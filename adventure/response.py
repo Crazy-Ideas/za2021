@@ -10,6 +10,7 @@ class RequestType:
     CREATE_SEASON = Munch()
     NEXT_MATCH = Munch()
     GET_SEASON = Munch(season=int(), round=int())
+    CUP_GET_SEASON = Munch(season=int())
 
 
 class SuccessMessage:
@@ -30,7 +31,7 @@ class StandardResponse:
         self.message.success = str()
         self.error_fields: Munch = Munch()
         self.request: Munch = Munch() if request is None else Munch.fromDict(request)
-        self.data: List = list()
+        self.data: Munch = Munch()
         if request is None:
             return
         if not isinstance(request_type, dict):
@@ -60,5 +61,3 @@ class StandardResponse:
     def get(self):
         return self.data
 
-    def first(self):
-        return self.data[0]

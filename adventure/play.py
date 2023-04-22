@@ -188,10 +188,9 @@ def get_next_match(request: Munch) -> Munch:
         return rsp.dict
     adventurer, opponent = current_adventure.next_match_up()
     player_urls = get_urls(Munch(adventurer=[adventurer], opponent=[opponent]))
-    data = Munch(adventurer=adventurer, adventurer_url=player_urls.adventurer[0].url, adventurer_rank=player_urls.adventurer[0].rank,
-                 opponent=opponent, opponent_url=player_urls.opponent[0].url, opponent_rank=player_urls.opponent[0].rank,
-                 **get_adventure_details(current_adventure))
-    rsp.data.append(data)
+    rsp.data = Munch(adventurer=adventurer, adventurer_url=player_urls.adventurer[0].url, adventurer_rank=player_urls.adventurer[0].rank,
+                     opponent=opponent, opponent_url=player_urls.opponent[0].url, opponent_rank=player_urls.opponent[0].rank,
+                     **get_adventure_details(current_adventure))
     rsp.message.success = SuccessMessage.NEXT_MATCH
     return rsp.dict
 
@@ -223,7 +222,6 @@ def get_season(request: Munch) -> Munch:
             player_urls.proximity[index].proximity = next(
                 proximity for opponent, proximity in opponent_proximity if opponent[:2] == group.name)
         player_urls.proximity.sort(key=lambda item: item.proximity)
-    data = Munch(**player_urls, **get_adventure_details(adventure))
-    rsp.data.append(data)
+    rsp.data = Munch(**player_urls, **get_adventure_details(adventure))
     rsp.message.success = SuccessMessage.GET_SEASON
     return rsp.dict
