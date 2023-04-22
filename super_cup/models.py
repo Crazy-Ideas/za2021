@@ -1,3 +1,4 @@
+import math
 from itertools import product
 from random import shuffle
 from typing import List, Tuple
@@ -13,23 +14,8 @@ from super_cup.errors import PlayerNotFound, GroupAlreadyInitialized, InvalidNum
 class CupConfig:
     TYPE = "super_cup"
     TBD = "TBD"
-    # TOTAL_TEAM_COUNT = 16
-    # PLAYER_PER_TEAM = 5
-
-
-class CupPlayer(FirestoreDocument):
-
-    def __init__(self):
-        super().__init__()
-        self.name: str = str()
-        self.group_name: str = str()
-        self.season: int = int()
-        self.type: str = CupConfig.TYPE
-        self.played: int = int()
-        self.won: int = int()
-
-
-CupPlayer.init("cup_player")
+    TOTAL_GROUP_COUNT = 16
+    PLAYER_PER_GROUP = 5
 
 
 class CupSeries(FirestoreDocument):
@@ -43,7 +29,6 @@ class CupSeries(FirestoreDocument):
         self.match_number: int = match_number
         self.total_group_count: int = total_group_count
         self.player_per_group: int = player_per_group
-        self.type: str = CupConfig.TYPE
         self.group_full_names: List[str] = [CupConfig.TBD, CupConfig.TBD]
         self.group_ranks: List[int] = [int(), int()]
         self.player1_names: List[str] = list()
@@ -196,3 +181,16 @@ class CupSeries(FirestoreDocument):
 
 
 CupSeries.init("cup_series")
+
+
+class RoundCalculator:
+
+    def __init__(self, group_count: int):
+        self.group_count: int = group_count
+
+    @property
+    def total_rounds(self):
+        return int(math.log2(self.group_count))
+
+    def total_matches_per_round(self, round_number: int):
+        return int(self.group_count / 2 ** round_number)
