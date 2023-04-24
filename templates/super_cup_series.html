@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% macro view_card(series) %}
+    <div class="card py-2 my-2">
+        <div class="card-body d-flex justify-content-around">
+            <div class="fw-bold text-muted small text-uppercase">
+                {{ series.match_identity }}
+            </div>
+            <div class="fw-bold text-muted h6">
+                {{ series.group1_score }} : {{ series.group2_score }}
+            </div>
+        </div>
+        <div class="card-img-top  pb-4 mb-4">
+            <div class="row px-2 mx-2">
+                <div class="col">
+                    <div class="modal-body-preview">
+                        <img src="{{ series.get_group1_url(players) }}" class="img-fluid"
+                             alt=" {{ series.star_player1 }} ({{ series.group1_rank }})"
+                        />
+                        <div class="round-image-gradient"></div>
+                        <div class="preview-name-container small font-weight-bold text-white">
+                            {{ series.group1_full_name }} ({{ series.group1_rank }})
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="modal-body-preview">
+                        <img src="{{ series.get_group2_url(players) }}" class="img-fluid"
+                             alt=" {{ series.star_player2 }} ({{ series.group2_rank }})"
+                        />
+                        <div class="round-image-gradient"></div>
+                        <div class="preview-name-container small font-weight-bold text-white">
+                            {{ series.group2_full_name }} ({{ series.group2_rank }})
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endmacro %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col-md p-2 m-2">
+            {% for series in earlier_rounds %}
+                {{ view_card(series) }}
+            {% endfor %}
+        </div>
+        <div class="col-md p-2 m-2">
+            {% for series in quarter_finals %}
+                {{ view_card(series) }}
+            {% endfor %}
+        </div>
+        <div class="col-md p-2 m-2">
+            {% for series in finals %}
+                {{ view_card(series) }}
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}

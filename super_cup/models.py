@@ -125,8 +125,19 @@ class CupSeries(FirestoreDocument):
         return self.get_score(self.PLAYER1)
 
     @property
-    def group2_score(self):
+    def group2_score(self) -> int:
         return self.get_score(self.PLAYER2)
+
+    @property
+    def match_identity(self) -> str:
+        round_calculator = RoundCalculator(self.total_group_count)
+        if self.round_number in round_calculator.earlier_round_numbers:
+            return f"Round {self.round_number}, Match {self.match_number}"
+        if self.round_number == round_calculator.quarter_final_round_number:
+            return f"Quarterfinal {self.match_number}"
+        if self.round_number == round_calculator.semi_final_round_number:
+            return f"Semifinal {self.match_number}"
+        return f"Final"
 
     def is_group1_initialized(self) -> bool:
         return bool(self.player1_names)
@@ -200,3 +211,19 @@ class RoundCalculator:
 
     def total_matches_per_round(self, round_number: int):
         return int(self.group_count / 2 ** round_number)
+
+    @property
+    def quarter_final_round_number(self) -> int:
+        return self.total_rounds - 2
+
+    @property
+    def final_round_number(self) -> int:
+        return self.total_rounds
+
+    @property
+    def semi_final_round_number(self) -> int:
+        return self.total_rounds - 1
+
+    @property
+    def earlier_round_numbers(self) -> List[int]:
+        return list(range(1, self.quarter_final_round_number))

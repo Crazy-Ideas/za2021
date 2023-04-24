@@ -79,3 +79,26 @@ def create_season(request: Munch) -> Munch:
     CupSeries.objects.create_all(CupSeries.objects.to_dicts(series_to_be_created))
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
+
+
+def get_season(request: Munch) -> Munch:
+    rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CUP_GET_SEASON)
+    if rsp.message.error:
+        return rsp.dict
+    series_list: List[CupSeries] = CupSeries.objects.filter_by(season=rsp.request.season).get()
+    if not series_list:
+        rsp.message.error = "Season not found."
+        return rsp.dict
+    series_list.sort(key=lambda item: (item.round_number, item.match_number))
+    player_names: List[str] = [match.star_player1 for match in series_list if match.is_group1_initialized()]
+    player_names += [match.star_player2 for match in series_list if match.is_group2_initialized()]
+    player_names = list(set(player_names))
+    get_player_tasks = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
+    rsp.data.players = perform_io_task(get_player_tasks)
+    round_calculator = RoundCalculator(series_list[0].total_group_count)
+    rsp.data.earlier_rounds = [series for series in series_list if series.round_number in round_calculator.earlier_round_numbers]
+    rsp.data.quarter_finals = [series for series in series_list if series.round_number == round_calculator.quarter_final_round_number]
+    rsp.data.finals = [series for series in series_list
+                       if series.round_number in (round_calculator.semi_final_round_number, round_calculator.final_round_number)]
+    rsp.message.success = SuccessMessage.GET_SEASON
+    return rsp.dict
