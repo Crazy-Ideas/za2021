@@ -41,22 +41,64 @@
 {% endmacro %}
 
 {% block app_content %}
-    <div class="row">
+    {% if no_seasons %}
+        <div class="row">
         <div class="col-md p-2 m-2">
-            {% for series in earlier_rounds %}
-                {{ view_card(series) }}
-            {% endfor %}
+            <div class="card ">
+                <div class="card-body d-flex justify-content-around py-6">
+                    <a href="{{ url_for("super_cup.seasons_create") }}" class="btn btn-success btn-rounded">
+                        <i class="fas fa-plus  me-2 "></i> Season
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="col-md p-2 m-2">
-            {% for series in quarter_finals %}
-                {{ view_card(series) }}
-            {% endfor %}
+    {% else %}
+        <div class="row">
+            <div class="col-md p-2 m-2">
+                <div class="card ">
+                    <div class="card-body d-flex justify-content-around py-6">
+                        <a href="{{ url_for("super_cup.play") }}" class="btn btn-primary btn-rounded">
+                            <i class="fas fa-play  me-2 "></i> Play
+                        </a>
+                        <a href="{{ url_for("super_cup.seasons_create") }}" class="btn btn-success btn-rounded">
+                            <i class="fas fa-plus  me-2 "></i> Season
+                        </a>
+                    </div>
+                    <div class="card-body d-flex justify-content-around py-6">
+                        <a href="{{ url_for("super_cup.view_season", season=1) }}"
+                           class="btn btn-primary btn-floating">
+                            <i class="fas fa-angle-double-left "></i>
+                        </a>
+                        <a href="{{ url_for("super_cup.view_season", season=season - 1) }}"
+                           class="btn btn-primary btn-floating">
+                            <i class="fas fa-angle-left "></i>
+                        </a>
+                        <p class="fw-bold text-muted small text-uppercase mb-1">Season {{ season }}</p>
+                        <a href="{{ url_for('super_cup.view_season', season=season + 1) }}"
+                           class="btn btn-primary btn-floating">
+                            <i class="fas fa-angle-right "></i>
+                        </a>
+                        <a href="{{ url_for("super_cup.view_last_season") }}"
+                           class="btn btn-primary btn-floating">
+                            <i class="fas fa-angle-double-right "></i>
+                        </a>
+                    </div>
+                </div>
+                {% for series in earlier_rounds %}
+                    {{ view_card(series) }}
+                {% endfor %}
+            </div>
+            <div class="col-md p-2 m-2">
+                {% for series in quarter_finals %}
+                    {{ view_card(series) }}
+                {% endfor %}
+            </div>
+            <div class="col-md p-2 m-2">
+                {% for series in finals %}
+                    {{ view_card(series) }}
+                {% endfor %}
+            </div>
         </div>
-        <div class="col-md p-2 m-2">
-            {% for series in finals %}
-                {{ view_card(series) }}
-            {% endfor %}
-        </div>
-    </div>
+    {% endif %}
 
 {% endblock %}

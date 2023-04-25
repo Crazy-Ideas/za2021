@@ -11,6 +11,7 @@ class RequestType:
     NEXT_MATCH = Munch()
     GET_SEASON = Munch(season=int(), round=int())
     CUP_GET_SEASON = Munch(season=int())
+    CUP_PLAY_RESULT = Munch(season=int(), round_number=int(), match_number=int(), winner=str(), loser=str())
 
 
 class SuccessMessage:

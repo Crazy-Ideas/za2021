@@ -87,18 +87,18 @@ def get_adventure_players_groups(rsp) -> Tuple[Adventure, List[Player], List[Gro
 def update_score(players, groups, winner) -> None:
     if len(groups) == 1:
         groups[0].update_score(played=2, won=1)
+    elif groups[0].name == winner[:2]:
+        groups[0].update_score(played=1, won=1)
+        groups[1].update_score(played=1, won=0)
+    else:
+        groups[0].update_score(played=1, won=0)
+        groups[1].update_score(played=1, won=1)
     if players[0].name == winner:
         players[0].update_score(played=1, won=1)
         players[1].update_score(played=1, won=0)
-        if len(groups) == 2:
-            groups[0].update_score(played=1, won=1)
-            groups[1].update_score(played=1, won=0)
     else:
         players[0].update_score(played=1, won=0)
         players[1].update_score(played=1, won=1)
-        if len(groups) == 2:
-            groups[0].update_score(played=1, won=0)
-            groups[1].update_score(played=1, won=1)
     return
 
 

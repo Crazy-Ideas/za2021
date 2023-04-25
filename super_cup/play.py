@@ -5,7 +5,7 @@ from typing import List, Callable
 from munch import Munch
 
 from adventure.response import StandardResponse, RequestType, SuccessMessage
-from models import Player, Group
+from models import Player, Group, Match
 from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 
@@ -38,9 +38,9 @@ def perform_io_task(task_list: List[Callable]):
     return results
 
 
-def get_latest_series() -> CupSeries:
-    query = CupSeries.objects.order_by("season", CupSeries.objects.ORDER_DESCENDING)
-    series: CupSeries = query.order_by("round_number", CupSeries.objects.ORDER_DESCENDING).first()
+def get_current_active_series() -> CupSeries:
+    query = CupSeries.objects.filter_by(series_completed_status=False)
+    series: CupSeries = query.order_by("round_number").order_by("match_number").first()
     return series
 
 
@@ -54,12 +54,11 @@ def create_season(request: Munch) -> Munch:
     group_count = CupConfig.TOTAL_GROUP_COUNT
     player_count_per_group = CupConfig.PLAYER_PER_GROUP
     rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CREATE_SEASON)
-    current_series: CupSeries = get_latest_series()
-    if current_series and not current_series.is_series_completed():
+    if get_current_active_series():
         rsp.message.error = "Complete previous season before starting a new season."
         return rsp.dict
-    current_season = current_series.season if current_series else 0
-    new_season = current_season + 1
+    last_complete_series: CupSeries = CupSeries.objects.order_by("season", CupSeries.objects.ORDER_DESCENDING).first()
+    new_season = last_complete_series.season + 1 if last_complete_series else 1
     round_calculator = RoundCalculator(group_count)
     selected_players: List[Player] = select_players(group_count, player_count_per_group)
     group_names: List[str] = list({player.group_name for player in selected_players})
@@ -100,5 +99,84 @@ def get_season(request: Munch) -> Munch:
     rsp.data.quarter_finals = [series for series in series_list if series.round_number == round_calculator.quarter_final_round_number]
     rsp.data.finals = [series for series in series_list
                        if series.round_number in (round_calculator.semi_final_round_number, round_calculator.final_round_number)]
+    rsp.data.season = rsp.request.season
     rsp.message.success = SuccessMessage.GET_SEASON
+    return rsp.dict
+
+
+def get_next_match(request: Munch) -> Munch:
+    rsp = StandardResponse(request, RequestType.NEXT_MATCH)
+    series: CupSeries = get_current_active_series()
+    if not series:
+        rsp.message.error = "Create a new season to play again."
+        return rsp.dict
+    rsp.data.series = series
+    player_names: List[str] = [series.current_match_player1_name, series.current_match_player2_name]
+    rsp.data.players = Player.objects.filter("name", Player.objects.IN, player_names).get()
+    rsp.message.success = SuccessMessage.NEXT_MATCH
+    return rsp.dict
+
+
+def update_play_result(request: Munch) -> Munch:
+    rsp = StandardResponse(request, RequestType.CUP_PLAY_RESULT)
+    if rsp.message.error:
+        return rsp.dict
+    player_names = [rsp.request.winner, rsp.request.loser]
+    group_names = [rsp.request.winner[:2], rsp.request.loser[:2]]
+    get_series_task = CupSeries.objects.filter_by(season=rsp.request.season, round_number=rsp.request.round_number,
+                                                  match_number=rsp.request.match_number).get
+    get_players_task = Player.objects.filter("name", Player.objects.IN, player_names).get
+    get_group_task = Group.objects.filter("name", Group.objects.IN, group_names).get
+    get_document_tasks: List[Callable] = [get_series_task, get_players_task, get_group_task]
+    results = perform_io_task(get_document_tasks)
+    series: CupSeries = next((result[0] for result in results if result and isinstance(result[0], CupSeries)), None)
+    players: List[Player] = next((result for result in results if result and isinstance(result[0], Player)), list())
+    groups: List[Group] = next((result for result in results if result and isinstance(result[0], Group)), list())
+    if not series or series.is_series_completed():
+        rsp.message.error = "Invalid season, round number or match number."
+        return rsp.dict
+    if not series.is_player_in_current_match(rsp.request.winner):
+        rsp.message.error = rsp.error_fields.winner = "Winner is not from the current match."
+        return rsp.dict
+    if not series.is_player_in_current_match(rsp.request.loser):
+        rsp.message.error = rsp.error_fields.loser = "Loser is not from the current match."
+        return rsp.dict
+    if len(players) != 2:
+        rsp.message.error = "Unable to find Players."
+        return rsp.dict
+    if not 1 <= len(groups) <= 2:
+        rsp.message.error = "Unable to find Groups."
+        return rsp.dict
+    winning_player = players[0] if players[0].name == rsp.request.winner else players[1]
+    losing_player = players[0] if players[0].name == rsp.request.loser else players[1]
+    winning_player.update_score(played=1, won=1)
+    losing_player.update_score(played=1, won=0)
+    update_tasks = [winning_player.save, losing_player.save]
+    if len(groups) == 1:
+        groups[0].update_score(played=2, won=1)
+        update_tasks.append(groups[0].save)
+    else:
+        winning_group = groups[0] if groups[0].name == rsp.request.winner[:2] else groups[1]
+        losing_group = groups[0] if groups[0].name == rsp.request.loser[:2] else groups[1]
+        winning_group.update_score(played=1, won=1)
+        losing_group.update_score(played=1, won=0)
+        update_tasks.extend([winning_group.save, losing_group.save])
+    match: Match = Match(season=rsp.request.season, series_type=CupConfig.TYPE, round_number=rsp.request.round_number,
+                         player1=rsp.request.winner, player2=rsp.request.loser)
+    match.winner = rsp.request.winner
+    update_tasks.append(match.save)
+    series.set_winner(rsp.request.winner)
+    update_tasks.append(series.save)
+    if series.is_series_completed():
+        series.series_completed_status = True
+        if not series.is_season_over():
+            next_series: CupSeries = CupSeries.objects.filter_by(season=rsp.request.season, round_number=rsp.request.round_number + 1,
+                                                                 match_number=series.get_next_rounds_match_number()).first()
+            if not next_series:
+                rsp.message.error = "Unable to update match. Invalid state."
+                return rsp.dict
+            next_series.copy_group(series)
+            update_tasks.append(next_series.save)
+    perform_io_task(update_tasks)
+    rsp.message.success = SuccessMessage.PLAY_RESULT
     return rsp.dict

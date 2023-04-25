@@ -21,3 +21,5 @@ class SuperCupTestCase(unittest.TestCase):
 
     def test_create_season(self):
         self.assertEqual(SuccessMessage.CREATE_SEASON, self.rsp.message.success)
+        rsp = create_season(Munch())
+        self.assertEqual("Complete previous season before starting a new season.", rsp.message.error)

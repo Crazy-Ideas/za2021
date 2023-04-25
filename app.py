@@ -46,6 +46,7 @@ def make_shell_context() -> dict:
     from s2022 import wc_methods
     from main import update_url, generate_url
     from models import Player, Group, Series, Standing, Match, FINAL_SERIES_TYPES
+    from super_cup.models import CupSeries
     import upload
     return {
         "User": User,
@@ -59,5 +60,6 @@ def make_shell_context() -> dict:
         "methods": methods,
         "FINAL_SERIES_TYPES": FINAL_SERIES_TYPES,
         "game": upload,
-        "wc_methods": wc_methods
+        "wc_methods": wc_methods,
+        "CupSeries": CupSeries,
     }

@@ -39,6 +39,7 @@ class CupSeries(FirestoreDocument):
         self.match_player1_names: List[str] = list()
         self.match_player2_names: List[str] = list()
         self.match_winner_names: List[str] = list()
+        self.series_completed_status: bool = False
 
     def initialize_group(self, group: Group, players: List[Player]):
         if len(players) != self.player_per_group:
@@ -171,19 +172,19 @@ class CupSeries(FirestoreDocument):
 
     @property
     def current_match_player1_name(self) -> str:
-        return self.player1_names[self.get_current_match_index()]
+        return self.match_player1_names[self.get_current_match_index()]
 
     @property
     def current_match_player2_name(self) -> str:
-        return self.player2_names[self.get_current_match_index()]
+        return self.match_player2_names[self.get_current_match_index()]
 
     @property
     def current_match_player1_rank(self) -> int:
-        return self.player1_ranks[self.get_current_match_index()]
+        return self.player1_ranks[self.player1_names.index(self.current_match_player1_name)]
 
     @property
     def current_match_player2_rank(self) -> int:
-        return self.player2_ranks[self.get_current_match_index()]
+        return self.player2_ranks[self.player2_names.index(self.current_match_player2_name)]
 
     def get_current_match_player1_url(self, players: List[Player]) -> str:
         return self.get_url(players, self.current_match_player1_name)
@@ -192,9 +193,26 @@ class CupSeries(FirestoreDocument):
         return self.get_url(players, self.current_match_player2_name)
 
     def set_winner(self, winner_name: str):
-        if winner_name not in (self.current_match_player1_name, self.current_match_player2_name):
+        if not self.is_player_in_current_match(winner_name):
             raise PlayerNotFound
-        self.match_winner_names[self.get_current_match_index()] = winner_name
+        self.match_winner_names.append(winner_name)
+
+    def is_player_in_current_match(self, player_name: str) -> bool:
+        return player_name in (self.current_match_player1_name, self.current_match_player2_name)
+
+    def get_next_rounds_match_number(self):
+        return int((self.match_number - 1) / 2) + 1
+
+    def is_season_over(self):
+        return self.round_number == RoundCalculator(self.total_group_count).final_round_number and self.is_series_completed()
+
+    @property
+    def game_number(self):
+        return len(self.match_winner_names)
+
+    @property
+    def total_games(self):
+        return len(self.match_player1_names)
 
 
 CupSeries.init("cup_series")
