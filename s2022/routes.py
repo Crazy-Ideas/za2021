@@ -15,7 +15,7 @@ from s2022.wc_methods import WorldCupMatch, get_wc_match, SEASON
 def play_world_cup():
     wc_match: WorldCupMatch = get_wc_match()
     if not wc_match:
-        return redirect(url_for("view_wc_standings"))
+        return redirect(url_for("s2022.view_wc_standings"))
     form: PlayWorldCupForm = PlayWorldCupForm(wc_match)
     if not form.validate_on_submit():
         return render_template("s2022_play.html", mt=MarginTag, match_player=wc_match, title="Play World Cup",

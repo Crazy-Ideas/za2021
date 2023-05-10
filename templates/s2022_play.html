@@ -4,15 +4,15 @@
 {% block app_content %}
     <div class="row">
         <div class="col-md-9">
-            <h5 class="mb-2 mt-2">
+            <h6 class="mb-2 mt-2">
                 Round {{ match_player.match.round }} #{{ match_player.match.order }}
-                - {{ match_player.player1.name }}
-                <small>(WC Rank: {{ match_player.player1.wc_rank }}, WC Score: {{ match_player.player1.wc_score }},
-                    Overall Rank: {{ match_player.player1.rank }})</small>
-                v {{ match_player.player2.name }}
-                <small>(WC Rank: {{ match_player.player2.wc_rank }}, WC Score: {{ match_player.player2.wc_score }},
-                    Overall Rank: {{ match_player.player2.rank }})</small>
-            </h5>
+                {#                - {{ match_player.player1.name }}#}
+                {#                <small>(WC Rank: {{ match_player.player1.wc_rank }}, WC Score: {{ match_player.player1.wc_score }},#}
+                {#                    Overall Rank: {{ match_player.player1.rank }})</small>#}
+                {#                v {{ match_player.player2.name }}#}
+                {#                <small>(WC Rank: {{ match_player.player2.wc_rank }}, WC Score: {{ match_player.player2.wc_score }},#}
+                {#                    Overall Rank: {{ match_player.player2.rank }})</small>#}
+            </h6>
         </div>
     </div>
     {% if "TBD" in match_player.match.players %}
@@ -52,6 +52,14 @@
                                          data-mdb-img="{{ match_player.player1.url }}"
                                          class="w-100"
                                          alt="{{ match_player.player1.name }}">
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ match_player.player1.name }}
+                                        ({{ match_player.player1.rank }})
+                                        - WC {{ match_player.player1.wc_score }}
+                                        ({{ match_player.player1.wc_rank }})
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -80,6 +88,13 @@
                                          data-mdb-img="{{ match_player.player2.url }}"
                                          class="w-100"
                                          alt="{{ match_player.player2.name }}">
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ match_player.player2.name }}
+                                        ({{ match_player.player2.rank }})
+                                        - WC {{ match_player.player2.wc_score }}
+                                        ({{ match_player.player2.wc_rank }})
+                                    </div>
                                 </div>
                             </div>
                         </div>
