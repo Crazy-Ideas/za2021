@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect, url_for, flash
 from munch import Munch
 
 from adventure import bp
@@ -13,11 +13,13 @@ from methods import cookie_login_required
 def play():
     rsp = get_next_match(Munch())
     if rsp.message.error:
+        flash(rsp.message.error)
         return redirect(url_for("adventure.view_last_round"))
     form = PlayForm(rsp.data.season, rsp.data.round, rsp.data.adventurer, rsp.data.opponent)
     if not form.validate_on_submit():
         return render_template("adventure_play.html", **rsp.data, title="Play Adventure", form=form)
     if form.rsp.message.error:
+        flash(form.rsp.message.error)
         return redirect(url_for("adventure.view_last_round"))
     return redirect(url_for("adventure.play"))
 
@@ -27,7 +29,8 @@ def play():
 def view_last_round():
     adventure: Adventure = get_latest_adventure()
     if not adventure:
-        return render_template("not_found_404.html")
+        flash("No season created yet. Create new season.")
+        return render_template("adventure_round.html", title="No Season", no_season=True)
     return redirect(url_for("adventure.view_season", season=adventure.season, round_number=adventure.round))
 
 
@@ -37,7 +40,7 @@ def view_season(season: int, round_number: int):
     rsp = get_season(Munch(season=season, round=round_number))
     if rsp.message.error:
         return redirect(url_for("adventure.view_last_round"))
-    return render_template("adventure_round.html", title="View Season", **rsp.data)
+    return render_template("adventure_round.html", title="View Season", no_season=False, **rsp.data)
 
 
 @bp.route("/adventure/seasons")
