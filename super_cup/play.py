@@ -10,7 +10,7 @@ from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 
 def select_players(group_count: int, player_count_per_group: int) -> List[Player]:
-    players: List[Player] = Player.objects.get()
+    players: List[Player] = Player.objects.order_by("rank").limit(group_count * player_count_per_group * 5).get()
     players.sort(key=lambda item: item.rank, reverse=False)
     selected_players: List[Player] = list()
     expected_count: int = group_count * player_count_per_group
@@ -27,9 +27,8 @@ def select_players(group_count: int, player_count_per_group: int) -> List[Player
         selected_groups.add(player.group_name)
         selected_players.extend(nominated_groups[player.group_name])
         if len(selected_players) >= expected_count:
-            break
-    return selected_players
-
+            return selected_players
+    return list()
 
 def perform_io_task(task_list: List[Callable]):
     with ThreadPoolExecutor(max_workers=len(task_list)) as executor:
@@ -61,6 +60,9 @@ def create_season(request: Munch) -> Munch:
     new_season = last_complete_series.season + 1 if last_complete_series else 1
     round_calculator = RoundCalculator(group_count)
     selected_players: List[Player] = select_players(group_count, player_count_per_group)
+    if not selected_players:
+        rsp.message.error = "Not enough players found to start the season."
+        return rsp.dict
     group_names: List[str] = list({player.group_name for player in selected_players})
     get_group_tasks: List[Callable] = [Group.objects.filter_by(name=group_name).first for group_name in group_names]
     groups: List[Group] = perform_io_task(get_group_tasks)
