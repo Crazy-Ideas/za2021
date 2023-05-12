@@ -44,7 +44,11 @@ def load_from_temp():
     created_groups: List[Group] = list()
     total_files: int = len(os.listdir("temp"))
     for index, filename in enumerate(os.listdir("temp")):
+        if filename == "firestore_export":
+            continue
         if filename[-5:] == ".json":
+            continue
+        if filename[-7:] == ".pickle":
             continue
         player_name = filename[:5]
         group_name = filename[:2]
@@ -236,6 +240,9 @@ def rename_player_matches(old_name: str, new_name: str):
 
 
 def update_json():
+    # player.json contains ZA2019 data is used in upload only. _score_players and reset_player_score / rename player matches
+    # player_names.json is used in playing random friendlies, s2022 (creating new round of matches)
+    # groupwise_players.json is used in adventure for creating a new season
     players: List[Player] = Player.objects.get()
     player_list: List[str] = [player.name for player in players]
     with open("temp/player_names.json", "w") as file:
