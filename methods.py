@@ -1,6 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import wraps
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Callable
 
 import pytz
 from flask import request, current_app
@@ -76,3 +77,10 @@ def cookie_login_required(route_function):
         return current_app.login_manager.unauthorized()
 
     return decorated_route
+
+
+def perform_io_task(task_list: List[Callable]):
+    with ThreadPoolExecutor(max_workers=len(task_list)) as executor:
+        threads = [executor.submit(task) for task in task_list]
+        results = [future.result() for future in as_completed(threads)]
+    return results

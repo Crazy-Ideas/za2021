@@ -1,16 +1,16 @@
 import json
 import random
 from datetime import datetime
-from typing import List
+from typing import List, Callable
 
 import pytz
-from flask import render_template, redirect, url_for, request, make_response, Response
+from flask import render_template, redirect, url_for, request, make_response, Response, flash
 from flask_login import login_user, current_user, logout_user
 from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import LoginForm, PlayFriendlyForm
-from methods import update_rank_and_save, MatchPlayer, cookie_login_required
+from methods import update_rank_and_save, MatchPlayer, cookie_login_required, perform_io_task
 from models import Group, Player, Match
 
 
@@ -39,8 +39,9 @@ def ranked_groups():
 @cookie_login_required
 def view_group(group_name: str):
     players = Player.objects.filter_by(group_name=group_name).get()
+    group = Group.objects.filter_by(name=group_name).first()
     players.sort(key=lambda item: item.score, reverse=True)
-    return render_template("players_ranked.html", title=group_name, players=players)
+    return render_template("players_ranked.html", title=group_name, players=players, group=group)
 
 
 @app.route("/play/friendly", methods=["GET", "POST"])
@@ -55,11 +56,18 @@ def play_friendly():
         elif play_from == "bottom":
             players = Player.objects.order_by("played").limit(20).get()
             selection: List[Player] = random.sample(players, k=2)
-        else:
+        elif play_from == "random":
             with open("temp/player_names.json") as file:
                 player_names: List[str] = json.load(file)
             select_names: List[str] = random.sample(player_names, k=2)
             selection: List[Player] = Player.objects.filter("name", Player.objects.IN, select_names).get()
+        elif len(play_from) == 7 and play_from[:5] == "group":
+            group_name = play_from[-2:].upper()
+            players = Player.objects.filter_by(group_name=group_name).get()
+            selection: List[Player] = random.sample(players, k=2)
+        else:
+            flash("Invalid play option. Defaulting to playing from top.")
+            return redirect(url_for("play_friendly", play_from="top"))
         match = Match(series_type="friendly")
         match.player1 = selection[0].name
         match.player2 = selection[1].name
@@ -78,20 +86,21 @@ def play_friendly():
     match_player.match.date_played = datetime.now(tz=pytz.UTC)
     match_player.winner.update_score(played=1, won=1)
     match_player.loser.update_score(played=1, won=0)
+    update_tasks: List[Callable] = [match_player.winner.save, match_player.winner.save]
     group_names = [match_player.player1.group_name, match_player.player2.group_name]
     if group_names[0] == group_names[1]:
         group: Group = Group.objects.filter_by(name=group_names[0]).first()
         group.update_score(played=2, won=1)
-        groups = [group]
+        update_tasks.append(group.save)
     else:
         groups: List[Group] = Group.objects.filter("name", Group.objects.IN, group_names).get()
         winner: Group = next(group for group in groups if group.name == match_player.winner_group_name)
         loser: Group = next(group for group in groups if group.name != winner.name)
         winner.update_score(played=1, won=1)
         loser.update_score(played=1, won=0)
-    match_player.match.save()
-    Player.objects.save_all([match_player.player1, match_player.player2])
-    Group.objects.save_all(groups)
+        update_tasks.extend([winner.save, winner.save])
+    update_tasks.append(match_player.match.save)
+    perform_io_task(update_tasks)
     return redirect(url_for("play_friendly", play_from=play_from))
 
 

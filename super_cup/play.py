@@ -1,10 +1,10 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from random import shuffle
 from typing import List, Callable
 
 from munch import Munch
 
 from adventure.response import StandardResponse, RequestType, SuccessMessage
+from methods import perform_io_task
 from models import Player, Group, Match
 from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
@@ -29,12 +29,6 @@ def select_players(group_count: int, player_count_per_group: int) -> List[Player
         if len(selected_players) >= expected_count:
             return selected_players
     return list()
-
-def perform_io_task(task_list: List[Callable]):
-    with ThreadPoolExecutor(max_workers=len(task_list)) as executor:
-        threads = [executor.submit(task) for task in task_list]
-        results = [future.result() for future in as_completed(threads)]
-    return results
 
 
 def get_current_active_series() -> CupSeries:
