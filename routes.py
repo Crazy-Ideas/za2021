@@ -86,7 +86,7 @@ def play_friendly():
     match_player.match.date_played = datetime.now(tz=pytz.UTC)
     match_player.winner.update_score(played=1, won=1)
     match_player.loser.update_score(played=1, won=0)
-    update_tasks: List[Callable] = [match_player.winner.save, match_player.winner.save]
+    update_tasks: List[Callable] = [match_player.winner.save, match_player.loser.save]
     group_names = [match_player.player1.group_name, match_player.player2.group_name]
     if group_names[0] == group_names[1]:
         group: Group = Group.objects.filter_by(name=group_names[0]).first()
@@ -98,7 +98,7 @@ def play_friendly():
         loser: Group = next(group for group in groups if group.name != winner.name)
         winner.update_score(played=1, won=1)
         loser.update_score(played=1, won=0)
-        update_tasks.extend([winner.save, winner.save])
+        update_tasks.extend([winner.save, loser.save])
     update_tasks.append(match_player.match.save)
     perform_io_task(update_tasks)
     return redirect(url_for("play_friendly", play_from=play_from))
