@@ -15,21 +15,13 @@ from main import generate_url
 from models import Player, Group, Match
 
 NEW_PLAYERS: dict = {
-    "AR": "Alexandra Daddario",
-    "BW": "Bonnie Wright",
-    "DF": "Dakota Fanning",
-    "EE": "Emily Deschanel",
-    "EF": "Elle Fanning",
-    "EU": "Erica Durance",
-    "EV": "Evanna Lynch",
-    "HH": "Helen Hunt",
-    "JX": "Jamie Alexander",
-    "MW": "Massie Williams",
-    "RE": "Rache Weiz",
-    "SS": "Sadie Sink",
-    "TJ": "Anya-Taylor Joy",
-    "ZC": "Zendaya Coleman",
-    "ZD": "Zoey Deschanel",
+    "EO": "Erin Moriarty",
+    "FA": "Freya Allan",
+    "IF": "Isabelle Fuhrman",
+    "KE": "Kiernan Shipka",
+    "NC": "Anya Chalotra",
+    "JK": "Joey King",
+    "MC": "Mackenzie Foy",
 }
 
 
@@ -89,6 +81,8 @@ def load_from_temp():
             group.fullname = NEW_PLAYERS[group_name]
             group.url = new_player.url
             group.url_expiration = new_player.url_expiration
+            group.player_name = new_player.name
+            group.qualification_locked = True
             groups.append(group)
             created_groups.append(group)
         group.player_count += 1
