@@ -3,14 +3,22 @@
 {% block app_content %}
     <div class="row">
         <div class="col-md pb-2 pt-2 d-flex justify-content-around ">
-            <span class="font-weight-bold text-lg-center">{{ group.fullname }} ({{ group.rank }})</span>
-            <a href="{{ url_for('ranked_groups') }}" class="btn btn-primary btn-floating">
-                <i class="fas fa-users fa-lg text-white"></i>
-            </a>
-            <a href="{{ url_for('play_friendly', play_from='group'+group.name) }}"
-               class="btn btn-primary btn-floating">
-                <i class="fas fa-play"></i>
-            </a>
+            {% if multi_groups %}
+                <span class="font-weight-bold text-lg-center">Players</span>
+                <a href="{{ url_for('play_friendly', play_from='top') }}"
+                   class="btn btn-primary btn-floating">
+                    <i class="fas fa-play"></i>
+                </a>
+            {% else %}
+                <span class="font-weight-bold text-lg-center">{{ group.fullname }} ({{ group.rank }})</span>
+                <a href="{{ url_for('ranked_groups') }}" class="btn btn-primary btn-floating">
+                    <i class="fas fa-users fa-lg text-white"></i>
+                </a>
+                <a href="{{ url_for('play_friendly', play_from='group'+group.name) }}"
+                   class="btn btn-primary btn-floating">
+                    <i class="fas fa-play"></i>
+                </a>
+            {% endif %}
         </div>
     </div>
     <div class="row">

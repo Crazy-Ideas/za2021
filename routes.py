@@ -24,7 +24,7 @@ def home():
 def ranked_players():
     players = Player.objects.order_by("score", Player.objects.ORDER_DESCENDING).limit(100).get()
     update_rank_and_save(players)
-    return render_template("players_ranked.html", title="Top 100 Players", players=players)
+    return render_template("players_ranked.html", title="Top 100 Players", players=players, multi_groups=True)
 
 
 @app.route("/scored_groups")
