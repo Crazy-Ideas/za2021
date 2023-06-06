@@ -8,15 +8,25 @@ from flask import url_for
 
 from models import Player, Group
 from super_cup.errors import PlayerNotFound, GroupAlreadyInitialized, InvalidNumberOfPlayersProvidedForInitialization, SeriesNotCompleted, \
-    GroupNotInitialized, SeriesCompleted
+    GroupNotInitialized, SeriesCompleted, InvalidPlayerPerGroup
 
 
 class CupConfig:
     TYPE = "super_cup"
     TBD = "TBD"
-    TOTAL_GROUP_COUNT = 16
-    PLAYER_PER_GROUP = 5
+    VALID_PLAYERS_PER_GROUP = (5, 3)
 
+    @classmethod
+    def is_valid_player_per_group(cls, player_per_group) -> bool:
+        return player_per_group in cls.VALID_PLAYERS_PER_GROUP
+
+    @classmethod
+    def get_total_group_count(cls, player_per_group: int):
+        if player_per_group == 5:
+            return 16
+        if player_per_group == 3:
+            return 64
+        raise InvalidPlayerPerGroup
 
 class CupSeries(FirestoreDocument):
     PLAYER1: str = "player1"

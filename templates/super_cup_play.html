@@ -56,6 +56,10 @@
 
                     <div class="card-body d-flex justify-content-around ">
                     <span>
+                        <i class="fas fa-trophy me-2 text-muted"></i>
+                        <strong class="me-1 text-muted">Cup {{ series.player_per_group }}</strong>
+                    </span>
+                        <span>
                         <i class="fas fa-futbol me-2 text-muted"></i>
                         <strong class="me-1 text-muted">{{ series.match_identity }}</strong>
                     </span>
@@ -71,7 +75,7 @@
                             <i class="fas fa-caret-left  fa-lg text-white"></i>
                         </button>
                         <a class="btn btn-primary btn-floating"
-                           href="{{ url_for("super_cup.view_season",  season=series.season) }}">
+                           href="{{ url_for("super_cup.view_season",  season=series.season, player_per_group=series.player_per_group) }}">
                             <i class="fas fa-people-arrows fa-lg text-white"></i>
                         </a>
                         <button onclick="selectPlayer('{{ series.current_match_player2_name }}')"

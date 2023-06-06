@@ -31,8 +31,8 @@ def select_players(group_count: int, player_count_per_group: int) -> List[Player
     return list()
 
 
-def get_current_active_series() -> CupSeries:
-    query = CupSeries.objects.filter_by(series_completed_status=False)
+def get_current_active_series(player_per_group: int) -> CupSeries:
+    query = CupSeries.objects.filter_by(series_completed_status=False, player_per_group=player_per_group)
     series: CupSeries = query.order_by("round_number").order_by("match_number").first()
     return series
 
@@ -44,13 +44,17 @@ def initialize_series(series: CupSeries, players: List[Player], groups: List[Gro
 
 
 def create_season(request: Munch) -> Munch:
-    group_count = CupConfig.TOTAL_GROUP_COUNT
-    player_count_per_group = CupConfig.PLAYER_PER_GROUP
     rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CREATE_SEASON)
-    if get_current_active_series():
+    player_count_per_group = rsp.request.player_per_group
+    if not CupConfig.is_valid_player_per_group(player_count_per_group):
+        rsp.message.error = "Invalid type of Super Cup."
+        return rsp.dict
+    group_count = CupConfig.get_total_group_count(player_count_per_group)
+    if get_current_active_series(player_count_per_group):
         rsp.message.error = "Complete previous season before starting a new season."
         return rsp.dict
-    last_complete_series: CupSeries = CupSeries.objects.order_by("season", CupSeries.objects.ORDER_DESCENDING).first()
+    query = CupSeries.objects.filter_by(player_per_group=player_count_per_group)
+    last_complete_series: CupSeries = query.order_by("season", CupSeries.objects.ORDER_DESCENDING).first()
     new_season = last_complete_series.season + 1 if last_complete_series else 1
     round_calculator = RoundCalculator(group_count)
     selected_players: List[Player] = select_players(group_count, player_count_per_group)
@@ -80,7 +84,10 @@ def get_season(request: Munch) -> Munch:
     rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CUP_GET_SEASON)
     if rsp.message.error:
         return rsp.dict
-    series_list: List[CupSeries] = CupSeries.objects.filter_by(season=rsp.request.season).get()
+    if not CupConfig.is_valid_player_per_group(rsp.request.player_per_group):
+        rsp.message.error = "Invalid type of Super Cup."
+        return rsp.dict
+    series_list = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group).get()
     if not series_list:
         rsp.message.error = "Season not found."
         return rsp.dict
@@ -101,8 +108,11 @@ def get_season(request: Munch) -> Munch:
 
 
 def get_next_match(request: Munch) -> Munch:
-    rsp = StandardResponse(request, RequestType.NEXT_MATCH)
-    series: CupSeries = get_current_active_series()
+    rsp = StandardResponse(request, RequestType.SUPER_CUP_NEXT_MATCH)
+    if not CupConfig.is_valid_player_per_group(rsp.request.player_per_group):
+        rsp.message.error = "Invalid type of Super Cup."
+        return rsp.dict
+    series: CupSeries = get_current_active_series(rsp.request.player_per_group)
     if not series:
         rsp.message.error = "Create a new season to play again."
         return rsp.dict

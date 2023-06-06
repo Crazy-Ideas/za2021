@@ -8,47 +8,48 @@ from super_cup.models import CupSeries
 from super_cup.play import get_season, create_season, get_next_match
 
 
-@bp.route("/super_cup/seasons/<int:season>")
+@bp.route("/super_cup/<int:player_per_group>/seasons/<int:season>")
 @cookie_login_required
-def view_season(season: int):
-    rsp = get_season(Munch(season=season))
+def view_season(player_per_group: int, season: int):
+    rsp = get_season(Munch(season=season, player_per_group=player_per_group))
     if rsp.message.error:
         flash(rsp.message.error)
         return redirect(url_for("super_cup.view_last_season"))
-    return render_template("super_cup_series.html", title="View Season", **rsp.data, no_seasons=False)
+    return render_template("super_cup_series.html", title="View Season", **rsp.data, no_seasons=False, player_per_group=player_per_group)
 
 
-@bp.route("/super_cup/last_season")
+@bp.route("/super_cup/<int:player_per_group>/last_season")
 @cookie_login_required
-def view_last_season():
-    series: CupSeries = CupSeries.objects.order_by("season", CupSeries.objects.ORDER_DESCENDING).first()
+def view_last_season(player_per_group: int):
+    query = CupSeries.objects.filter_by(player_per_group=player_per_group)
+    series: CupSeries = query.order_by("season", CupSeries.objects.ORDER_DESCENDING).first()
     if not series:
         flash("Create a new season.")
-        return render_template("super_cup_series.html", title="Create Season", no_seasons=True)
-    return redirect(url_for("super_cup.view_season", season=series.season))
+        return render_template("super_cup_series.html", title="Create Season", no_seasons=True, player_per_group=player_per_group)
+    return redirect(url_for("super_cup.view_season", season=series.season, player_per_group=player_per_group))
 
 
-@bp.route("/super_cup/seasons")
+@bp.route("/super_cup/<int:player_per_group>/seasons")
 @cookie_login_required
-def seasons_create():
-    rsp = create_season(Munch())
+def seasons_create(player_per_group: int):
+    rsp = create_season(Munch(player_per_group=player_per_group))
     if rsp.message.error:
         flash(rsp.message.error)
-    return redirect(url_for("super_cup.view_last_season"))
+    return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
 
 
-@bp.route("/super_cup/play", methods=["GET", "POST"])
+@bp.route("/super_cup/<int:player_per_group>/play", methods=["GET", "POST"])
 @cookie_login_required
-def play():
-    rsp = get_next_match(Munch())
+def play(player_per_group: int):
+    rsp = get_next_match(Munch(player_per_group=player_per_group))
     if rsp.message.error:
         flash(rsp.message.error)
-        return redirect(url_for("super_cup.view_last_season"))
+        return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
     form = PlayForm(rsp.data.series)
     if not form.validate_on_submit():
         flash(form.rsp.message.error)
         return render_template("super_cup_play.html", **rsp.data, title="Play Super Cup", form=form)
     if form.rsp.message.error:
         flash(form.rsp.message.error)
-        return redirect(url_for("super_cup.view_last_season"))
-    return redirect(url_for("super_cup.play"))
+        return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
+    return redirect(url_for("super_cup.play", player_per_group=player_per_group))

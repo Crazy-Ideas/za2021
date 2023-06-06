@@ -20,3 +20,7 @@ class GroupNotInitialized(Exception):
 
 class SeriesCompleted(Exception):
     pass
+
+
+class InvalidPlayerPerGroup(Exception):
+    pass
