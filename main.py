@@ -68,10 +68,11 @@ def update_url(*args, **kwargs):
         group.player_name = top_player.name
         group.url = top_player.url
         group.url_expiration = top_player.url_expiration
-        standing = next(s for s in standings if s.group_name == group.name)
-        standing.player_name = top_player.name
-        standing.url = top_player.url
-        standing.url_expiration = top_player.url_expiration
+        standing = next((s for s in standings if s.group_name == group.name), None)
+        if standing:
+            standing.player_name = top_player.name
+            standing.url = top_player.url
+            standing.url_expiration = top_player.url_expiration
     update_rank(groups)
     Player.objects.save_all(updated_players)
     Group.objects.save_all(groups)
