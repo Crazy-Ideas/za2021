@@ -14,7 +14,8 @@ from super_cup.errors import PlayerNotFound, GroupAlreadyInitialized, InvalidNum
 class CupConfig:
     TYPE = "super_cup"
     TBD = "TBD"
-    VALID_PLAYERS_PER_GROUP = (5, 3)
+    VALID_PLAYERS_PER_GROUP = (3, 5, 7, 9, 11, 13)
+    INDEXED_GROUP_COUNT = (64, 16, 8, 8, 4, 4)
 
     @classmethod
     def is_valid_player_per_group(cls, player_per_group) -> bool:
@@ -22,11 +23,9 @@ class CupConfig:
 
     @classmethod
     def get_total_group_count(cls, player_per_group: int):
-        if player_per_group == 5:
-            return 16
-        if player_per_group == 3:
-            return 64
-        raise InvalidPlayerPerGroup
+        if not cls.is_valid_player_per_group(player_per_group):
+            raise InvalidPlayerPerGroup
+        return cls.INDEXED_GROUP_COUNT[cls.VALID_PLAYERS_PER_GROUP.index(player_per_group)]
 
 class CupSeries(FirestoreDocument):
     PLAYER1: str = "player1"
@@ -50,6 +49,11 @@ class CupSeries(FirestoreDocument):
         self.match_player2_names: List[str] = list()
         self.match_winner_names: List[str] = list()
         self.series_completed_status: bool = False
+
+    def __repr__(self):
+        return f"SC{self.player_per_group}S{self.season}:{self.match_identity}:" \
+               f"{self.group_full_names[0]} {'(W)' if self.is_group1_winner() else ''} v " \
+               f"{self.group_full_names[1]} {'(W)' if self.is_group2_winner() else ''}"
 
     def initialize_group(self, group: Group, players: List[Player]):
         if len(players) != self.player_per_group:
@@ -143,11 +147,11 @@ class CupSeries(FirestoreDocument):
     def match_identity(self) -> str:
         round_calculator = RoundCalculator(self.total_group_count)
         if self.round_number in round_calculator.earlier_round_numbers:
-            return f"Round {self.round_number}, Match {self.match_number}"
+            return f"R{self.round_number}M{self.match_number}"
         if self.round_number == round_calculator.quarter_final_round_number:
-            return f"Quarterfinal {self.match_number}"
+            return f"QF{self.match_number}"
         if self.round_number == round_calculator.semi_final_round_number:
-            return f"Semifinal {self.match_number}"
+            return f"SF{self.match_number}"
         return f"Final"
 
     def is_group1_initialized(self) -> bool:

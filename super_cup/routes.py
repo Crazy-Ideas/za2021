@@ -14,7 +14,7 @@ def view_season(player_per_group: int, season: int):
     rsp = get_season(Munch(season=season, player_per_group=player_per_group))
     if rsp.message.error:
         flash(rsp.message.error)
-        return redirect(url_for("super_cup.view_last_season"))
+        return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
     return render_template("super_cup_series.html", title="View Season", **rsp.data, no_seasons=False, player_per_group=player_per_group)
 
 

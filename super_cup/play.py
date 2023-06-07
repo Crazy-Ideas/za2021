@@ -10,7 +10,8 @@ from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 
 def select_players(group_count: int, player_count_per_group: int) -> List[Player]:
-    players: List[Player] = Player.objects.order_by("rank").limit(group_count * player_count_per_group * 5).get()
+    filtered_player_count: int = group_count * player_count_per_group * player_count_per_group
+    players: List[Player] = Player.objects.order_by("rank").limit(filtered_player_count).get()
     players.sort(key=lambda item: item.rank, reverse=False)
     selected_players: List[Player] = list()
     expected_count: int = group_count * player_count_per_group
@@ -44,7 +45,7 @@ def initialize_series(series: CupSeries, players: List[Player], groups: List[Gro
 
 
 def create_season(request: Munch) -> Munch:
-    rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CREATE_SEASON)
+    rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CUP_CREATE_SEASON)
     player_count_per_group = rsp.request.player_per_group
     if not CupConfig.is_valid_player_per_group(player_count_per_group):
         rsp.message.error = "Invalid type of Super Cup."
@@ -108,7 +109,7 @@ def get_season(request: Munch) -> Munch:
 
 
 def get_next_match(request: Munch) -> Munch:
-    rsp = StandardResponse(request, RequestType.SUPER_CUP_NEXT_MATCH)
+    rsp = StandardResponse(request, RequestType.CUP_NEXT_MATCH)
     if not CupConfig.is_valid_player_per_group(rsp.request.player_per_group):
         rsp.message.error = "Invalid type of Super Cup."
         return rsp.dict
@@ -130,7 +131,7 @@ def update_play_result(request: Munch) -> Munch:
     player_names = [rsp.request.winner, rsp.request.loser]
     group_names = [rsp.request.winner[:2], rsp.request.loser[:2]]
     get_series_task = CupSeries.objects.filter_by(season=rsp.request.season, round_number=rsp.request.round_number,
-                                                  match_number=rsp.request.match_number).get
+                                                  match_number=rsp.request.match_number, player_per_group=rsp.request.player_per_group).get
     get_players_task = Player.objects.filter("name", Player.objects.IN, player_names).get
     get_group_task = Group.objects.filter("name", Group.objects.IN, group_names).get
     get_document_tasks: List[Callable] = [get_series_task, get_players_task, get_group_task]

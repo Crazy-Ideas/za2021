@@ -7,12 +7,13 @@ from adventure.errors import InvalidRequestTypeWhileCreatingRequest
 
 class RequestType:
     PLAY_RESULT = Munch(season=int(), round=int(), winner=str(), loser=str(), acquired=bool())
-    CREATE_SEASON = Munch(player_per_group=int())
+    CREATE_SEASON = Munch()
     NEXT_MATCH = Munch()
     GET_SEASON = Munch(season=int(), round=int())
     CUP_GET_SEASON = Munch(season=int(), player_per_group=int())
-    CUP_PLAY_RESULT = Munch(season=int(), round_number=int(), match_number=int(), winner=str(), loser=str())
-    SUPER_CUP_NEXT_MATCH = Munch(player_per_group=int())
+    CUP_PLAY_RESULT = Munch(season=int(), round_number=int(), match_number=int(), winner=str(), loser=str(), player_per_group=int())
+    CUP_NEXT_MATCH = Munch(player_per_group=int())
+    CUP_CREATE_SEASON = Munch(player_per_group=int())
 
 class SuccessMessage:
     NEXT_MATCH = "Next match up ready."

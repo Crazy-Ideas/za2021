@@ -19,12 +19,13 @@ class PlayForm(FlaskForm):
     def __init__(self, series: CupSeries, *args, **kwargs):
         super().__init__(*args, **kwargs)
         play_request = Munch(season=series.season, round_number=series.round_number, match_number=series.match_number,
-                             winner=series.current_match_player1_name, loser=series.current_match_player2_name)
+                             winner=series.current_match_player1_name, loser=series.current_match_player2_name,
+                             player_per_group=series.player_per_group)
         self.rsp: Munch = StandardResponse(play_request, RequestType.CUP_PLAY_RESULT).dict
         if request.method == "POST":
             loser: str = series.current_match_player1_name if series.current_match_player2_name == self.winner.data else series.current_match_player2_name
             play_request = Munch(season=series.season, round_number=series.round_number, match_number=series.match_number,
-                                 winner=self.winner.data, loser=loser)
+                                 winner=self.winner.data, loser=loser, player_per_group=series.player_per_group)
             self.rsp: Munch = update_play_result(play_request)
 
     def validate_winner(self, _):
