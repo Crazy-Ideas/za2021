@@ -177,8 +177,9 @@ def update_play_result(request: Munch) -> Munch:
     if series.is_series_completed():
         series.series_completed_status = True
         if not series.is_season_over():
-            next_series: CupSeries = CupSeries.objects.filter_by(season=rsp.request.season, round_number=rsp.request.round_number + 1,
-                                                                 match_number=series.get_next_rounds_match_number()).first()
+            query = CupSeries.objects.filter_by(player_per_group=series.player_per_group, round_number=rsp.request.round_number + 1)
+            next_series: CupSeries = query.filter_by(season=rsp.request.season, match_number=series.get_next_rounds_match_number()).first()
+
             if not next_series:
                 rsp.message.error = "Unable to update match. Invalid state."
                 return rsp.dict
