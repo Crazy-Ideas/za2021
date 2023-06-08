@@ -6,20 +6,20 @@
             <div class="col-md pt-2 mt-2 ">
                 <div class="modal-body-preview">
                     <img src="{{ series.get_current_match_player1_url(players) }}" class="img-fluid"
-                         alt=" {{ series.current_match_player1_name }} ({{ series.current_match_player1_rank }})"/>
+                         alt=" {{ current_match_player1 }} ({{ series.current_match_player1_rank }})"/>
                     <div class="round-image-gradient"></div>
                     <div class="preview-name-container small font-weight-bold text-white">
-                        {{ series.current_match_player1_name }} ({{ series.current_match_player1_rank }})
+                        {{ current_match_player1 }} ({{ series.current_match_player1_rank }})
                     </div>
                 </div>
             </div>
             <div class="col-md pt-2 mt-2">
                 <div class="modal-body-preview">
                     <img src="{{ series.get_current_match_player2_url(players) }}" class="img-fluid"
-                         alt="{{ series.current_match_player2_name }} ({{ series.current_match_player2_rank }})"/>
+                         alt="{{ current_match_player2 }} ({{ series.current_match_player2_rank }})"/>
                     <div class="round-image-gradient"></div>
                     <div class="preview-name-container small font-weight-bold text-white">
-                        {{ series.current_match_player2_name }} ({{ series.current_match_player2_rank }})
+                        {{ current_match_player2 }} ({{ series.current_match_player2_rank }})
                     </div>
                 </div>
             </div>
@@ -30,10 +30,10 @@
                             <div class="col">
                                 <div class="modal-body-preview">
                                     <img src="{{ series.get_current_match_player1_url(players) }}" class="img-fluid"
-                                         alt=" {{ series.current_match_player1_name }} ({{ series.current_match_player1_rank }})"/>
+                                         alt=" {{ current_match_player1 }} ({{ series.current_match_player1_rank }})"/>
                                     <div class="round-image-gradient"></div>
                                     <div class="preview-name-container small font-weight-bold text-white">
-                                        {{ series.current_match_player1_name }} ({{ series.current_match_player1_rank }})
+                                        {{ current_match_player1 }} ({{ series.current_match_player1_rank }})
                                     </div>
                                 </div>
 
@@ -41,10 +41,10 @@
                             <div class="col">
                                 <div class="modal-body-preview">
                                     <img src="{{ series.get_current_match_player2_url(players) }}" class="img-fluid"
-                                         alt="{{ series.current_match_player2_name }} ({{ series.current_match_player2_rank }})"/>
+                                         alt="{{ current_match_player2 }} ({{ series.current_match_player2_rank }})"/>
                                     <div class="round-image-gradient"></div>
                                     <div class="preview-name-container small font-weight-bold text-white">
-                                        {{ series.current_match_player2_name }} ({{ series.current_match_player2_rank }})
+                                        {{ current_match_player2 }} ({{ series.current_match_player2_rank }})
                                     </div>
                                 </div>
                             </div>
@@ -70,7 +70,7 @@
                     </div>
                     <hr class="hr mb-2">
                     <div class="card-body d-flex justify-content-around py-6">
-                        <button onclick="selectPlayer('{{ series.current_match_player1_name }}')"
+                        <button onclick="selectPlayer('{{ current_match_player1 }}')"
                                 class="btn btn-success btn-floating" type="button">
                             <i class="fas fa-caret-left  fa-lg text-white"></i>
                         </button>
@@ -78,7 +78,7 @@
                            href="{{ url_for("super_cup.view_season",  season=series.season, player_per_group=series.player_per_group) }}">
                             <i class="fas fa-people-arrows fa-lg text-white"></i>
                         </a>
-                        <button onclick="selectPlayer('{{ series.current_match_player2_name }}')"
+                        <button onclick="selectPlayer('{{ current_match_player2 }}')"
                                 class="btn btn-success btn-floating" type="button">
                             <i class="fas fa-caret-right fa-lg text-white"></i>
                         </button>

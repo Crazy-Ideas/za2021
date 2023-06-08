@@ -27,6 +27,7 @@ class CupConfig:
             raise InvalidPlayerPerGroup
         return cls.INDEXED_GROUP_COUNT[cls.VALID_PLAYERS_PER_GROUP.index(player_per_group)]
 
+
 class CupSeries(FirestoreDocument):
     PLAYER1: str = "player1"
     PLAYER2: str = "player2"
@@ -94,12 +95,13 @@ class CupSeries(FirestoreDocument):
 
     @staticmethod
     def get_url(players: List[Player], player_name):
+        # used in html file. Cannot error. Fail gracefully
         if player_name == CupConfig.TBD:
             return url_for("static", filename="default.jpg")
         try:
             return next(player for player in players if player.name == player_name).url
         except StopIteration:
-            raise PlayerNotFound
+            return url_for("static", filename="default.jpg")
 
     def get_score(self, player_type: str) -> int:
         player_names = getattr(self, f"{player_type}_names")
@@ -194,17 +196,29 @@ class CupSeries(FirestoreDocument):
 
     @property
     def current_match_player1_rank(self) -> int:
-        return self.player1_ranks[self.player1_names.index(self.current_match_player1_name)]
+        try:
+            return self.player1_ranks[self.player1_names.index(self.current_match_player1_name)]
+        except (SeriesCompleted, GroupNotInitialized, ValueError, IndexError):
+            return 0
 
     @property
     def current_match_player2_rank(self) -> int:
-        return self.player2_ranks[self.player2_names.index(self.current_match_player2_name)]
+        try:
+            return self.player2_ranks[self.player2_names.index(self.current_match_player2_name)]
+        except (SeriesCompleted, GroupNotInitialized, ValueError, IndexError):
+            return 0
 
     def get_current_match_player1_url(self, players: List[Player]) -> str:
-        return self.get_url(players, self.current_match_player1_name)
+        try:
+            return self.get_url(players, self.current_match_player1_name)
+        except (GroupNotInitialized, SeriesCompleted):
+            return url_for("static", filename="default.jpg")
 
     def get_current_match_player2_url(self, players: List[Player]) -> str:
-        return self.get_url(players, self.current_match_player2_name)
+        try:
+            return self.get_url(players, self.current_match_player2_name)
+        except (GroupNotInitialized, SeriesCompleted):
+            return url_for("static", filename="default.jpg")
 
     def set_winner(self, winner_name: str):
         if not self.is_player_in_current_match(winner_name):
@@ -212,7 +226,10 @@ class CupSeries(FirestoreDocument):
         self.match_winner_names.append(winner_name)
 
     def is_player_in_current_match(self, player_name: str) -> bool:
-        return player_name in (self.current_match_player1_name, self.current_match_player2_name)
+        try:
+            return player_name in (self.current_match_player1_name, self.current_match_player2_name)
+        except (GroupNotInitialized, SeriesCompleted):
+            return False
 
     def get_next_rounds_match_number(self):
         return int((self.match_number - 1) / 2) + 1

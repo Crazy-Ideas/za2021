@@ -3,6 +3,7 @@ from munch import Munch
 
 from methods import cookie_login_required
 from super_cup import bp
+from super_cup.errors import GroupNotInitialized, SeriesCompleted
 from super_cup.forms import PlayForm
 from super_cup.models import CupSeries
 from super_cup.play import get_season, create_season, get_next_match
@@ -45,10 +46,20 @@ def play(player_per_group: int):
     if rsp.message.error:
         flash(rsp.message.error)
         return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
-    form = PlayForm(rsp.data.series)
+    try:
+        current_match_player1 = rsp.data.series.current_match_player1_name
+        current_match_player2 = rsp.data.series.current_match_player2_name
+    except GroupNotInitialized:
+        flash("Exception. Group not initialized.")
+        return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
+    except SeriesCompleted:
+        flash("Exception. Series completed.")
+        return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
+    form = PlayForm(rsp.data.series, current_match_player1, current_match_player2)
     if not form.validate_on_submit():
         flash(form.rsp.message.error)
-        return render_template("super_cup_play.html", **rsp.data, title="Play Super Cup", form=form)
+        return render_template("super_cup_play.html", **rsp.data, title="Play Super Cup", form=form,
+                               current_match_player1=current_match_player1, current_match_player2=current_match_player2)
     if form.rsp.message.error:
         flash(form.rsp.message.error)
         return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))

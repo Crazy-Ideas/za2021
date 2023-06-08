@@ -6,6 +6,8 @@ from munch import Munch
 from adventure.response import StandardResponse, RequestType, SuccessMessage
 from methods import perform_io_task
 from models import Player, Group, Match
+from super_cup.errors import InvalidNumberOfPlayersProvidedForInitialization, GroupAlreadyInitialized, PlayerNotFound, \
+    InvalidPlayerPerGroup, SeriesNotCompleted, GroupNotInitialized, SeriesCompleted
 from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 
@@ -47,10 +49,11 @@ def initialize_series(series: CupSeries, players: List[Player], groups: List[Gro
 def create_season(request: Munch) -> Munch:
     rsp: StandardResponse = StandardResponse(request=request, request_type=RequestType.CUP_CREATE_SEASON)
     player_count_per_group = rsp.request.player_per_group
-    if not CupConfig.is_valid_player_per_group(player_count_per_group):
+    try:
+        group_count = CupConfig.get_total_group_count(player_count_per_group)
+    except InvalidPlayerPerGroup:
         rsp.message.error = "Invalid type of Super Cup."
         return rsp.dict
-    group_count = CupConfig.get_total_group_count(player_count_per_group)
     if get_current_active_series(player_count_per_group):
         rsp.message.error = "Complete previous season before starting a new season."
         return rsp.dict
@@ -74,8 +77,15 @@ def create_season(request: Munch) -> Munch:
             series_to_be_created.append(series)
             if round_number != 1:
                 continue
-            group_index = initialize_series(series, selected_players, groups, group_index)
-            group_index = initialize_series(series, selected_players, groups, group_index)
+            try:
+                group_index = initialize_series(series, selected_players, groups, group_index)
+                group_index = initialize_series(series, selected_players, groups, group_index)
+            except InvalidNumberOfPlayersProvidedForInitialization:
+                rsp.message.error = "Invalid number of players provided for initialization."
+                return rsp.dict
+            except GroupAlreadyInitialized:
+                rsp.message.error = "Group already initialized."
+                return rsp.dict
     CupSeries.objects.create_all(CupSeries.objects.to_dicts(series_to_be_created))
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
@@ -118,8 +128,18 @@ def get_next_match(request: Munch) -> Munch:
         rsp.message.error = "Create a new season to play again."
         return rsp.dict
     rsp.data.series = series
-    player_names: List[str] = [series.current_match_player1_name, series.current_match_player2_name]
+    try:
+        player_names: List[str] = [series.current_match_player1_name, series.current_match_player2_name]
+    except GroupNotInitialized:
+        rsp.message.error = "Exception. Group not initialized."
+        return rsp.dict
+    except SeriesCompleted:
+        rsp.message.error = "Exception. Series completed."
+        return rsp.dict
     rsp.data.players = Player.objects.filter("name", Player.objects.IN, player_names).get()
+    if len(rsp.data.players) != 2:
+        rsp.message.error = "Players for next match not found"
+        return rsp.dict
     rsp.message.success = SuccessMessage.NEXT_MATCH
     return rsp.dict
 
@@ -172,7 +192,11 @@ def update_play_result(request: Munch) -> Munch:
                          player1=rsp.request.winner, player2=rsp.request.loser)
     match.winner = rsp.request.winner
     update_tasks.append(match.save)
-    series.set_winner(rsp.request.winner)
+    try:
+        series.set_winner(rsp.request.winner)
+    except PlayerNotFound:
+        rsp.message.error = "Exception. Winner player not found."
+        return rsp.dict
     update_tasks.append(series.save)
     if series.is_series_completed():
         series.series_completed_status = True
@@ -183,7 +207,14 @@ def update_play_result(request: Munch) -> Munch:
             if not next_series:
                 rsp.message.error = "Unable to update match. Invalid state."
                 return rsp.dict
-            next_series.copy_group(series)
+            try:
+                next_series.copy_group(series)
+            except GroupAlreadyInitialized:
+                rsp.message.error = "Exception. Group already initialized."
+                return rsp.dict
+            except SeriesNotCompleted:
+                rsp.message.error = "Exception. Series not completed."
+                return rsp.dict
             update_tasks.append(next_series.save)
     perform_io_task(update_tasks)
     rsp.message.success = SuccessMessage.PLAY_RESULT
