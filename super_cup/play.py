@@ -13,6 +13,8 @@ from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 def select_players(group_count: int, player_count_per_group: int) -> List[Player]:
     filtered_player_count: int = group_count * player_count_per_group * player_count_per_group
+    if player_count_per_group == 1:
+        filtered_player_count = 1000
     players: List[Player] = Player.objects.order_by("rank").limit(filtered_player_count).get()
     players.sort(key=lambda item: item.rank, reverse=False)
     selected_players: List[Player] = list()
