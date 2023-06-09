@@ -14,8 +14,8 @@ from super_cup.errors import PlayerNotFound, GroupAlreadyInitialized, InvalidNum
 class CupConfig:
     TYPE = "super_cup"
     TBD = "TBD"
-    VALID_PLAYERS_PER_GROUP = (3, 5, 7, 9, 11, 13)
-    INDEXED_GROUP_COUNT = (64, 16, 8, 8, 4, 4)
+    VALID_PLAYERS_PER_GROUP = (1, 3, 5, 7, 9, 11, 13)
+    INDEXED_GROUP_COUNT = (128, 64, 16, 8, 8, 4, 4)
 
     @classmethod
     def is_valid_player_per_group(cls, player_per_group) -> bool:
