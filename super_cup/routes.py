@@ -36,7 +36,7 @@ def seasons_create(player_per_group: int):
     rsp = create_season(Munch(player_per_group=player_per_group))
     if rsp.message.error:
         flash(rsp.message.error)
-    return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
+    return redirect(url_for("super_cup.play", player_per_group=player_per_group))
 
 
 @bp.route("/super_cup/<int:player_per_group>/play", methods=["GET", "POST"])
