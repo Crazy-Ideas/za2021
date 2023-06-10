@@ -217,6 +217,9 @@ def update_play_result(request: Munch) -> Munch:
             except SeriesNotCompleted:
                 rsp.message.error = "Exception. Series not completed."
                 return rsp.dict
+            except InvalidNumberOfPlayersProvidedForInitialization:
+                rsp.message.error = "Exception. Invalid number of players."
+                return rsp.dict
             update_tasks.append(next_series.save)
     perform_io_task(update_tasks)
     rsp.message.success = SuccessMessage.PLAY_RESULT

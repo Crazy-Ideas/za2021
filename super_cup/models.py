@@ -69,6 +69,8 @@ class CupSeries(FirestoreDocument):
         return
 
     def initialize_matches(self):
+        if len(self.player1_names) != self.player_per_group or len(self.player2_names) != self.player_per_group:
+            raise InvalidNumberOfPlayersProvidedForInitialization
         player_indices: List[Tuple[int, int]] = list(product(range(self.player_per_group), range(self.player_per_group)))
         shuffle(player_indices)
         self.match_player1_names = [self.player1_names[player_index[0]] for player_index in player_indices]
@@ -77,6 +79,8 @@ class CupSeries(FirestoreDocument):
     def copy_group(self, series: 'CupSeries'):
         player_type, index = self.get_player_type_and_index()
         from_player_type = series.get_winner_player_type()
+        if len(getattr(series, f"{from_player_type}_names")) != self.player_per_group:
+            raise InvalidNumberOfPlayersProvidedForInitialization
         from_index = 0 if from_player_type == self.PLAYER1 else 1
         self.group_full_names[index] = series.group_full_names[from_index]
         self.group_ranks[index] = series.group_ranks[from_index]
