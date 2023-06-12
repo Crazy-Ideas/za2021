@@ -6,7 +6,7 @@ from super_cup import bp
 from super_cup.errors import GroupNotInitialized, SeriesCompleted
 from super_cup.forms import PlayForm
 from super_cup.models import CupSeries
-from super_cup.play import get_season, create_season, get_next_match
+from super_cup.play import get_season, create_season, get_next_match, get_all_seasons
 
 
 @bp.route("/super_cup/<int:player_per_group>/seasons/<int:season>")
@@ -64,3 +64,13 @@ def play(player_per_group: int):
         flash(form.rsp.message.error)
         return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
     return redirect(url_for("super_cup.play", player_per_group=player_per_group))
+
+
+@bp.route("/super_cup/<int:player_per_group>/all_seasons")
+@cookie_login_required
+def view_all_seasons(player_per_group: int):
+    rsp = get_all_seasons(Munch(player_per_group=player_per_group))
+    if rsp.message.error:
+        flash(rsp.message.error)
+        return redirect(url_for("super_cup.play", player_per_group=player_per_group))
+    return render_template("super_cup_seasons.html", title="All Season", **rsp.data)

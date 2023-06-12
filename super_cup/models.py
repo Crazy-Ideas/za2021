@@ -98,7 +98,7 @@ class CupSeries(FirestoreDocument):
         return player_type, index
 
     @staticmethod
-    def get_url(players: List[Player], player_name):
+    def get_url(players: List[Player], player_name) -> str:
         # used in html file. Cannot error. Fail gracefully
         if player_name == CupConfig.TBD:
             return url_for("static", filename="default.jpg")
@@ -135,6 +135,10 @@ class CupSeries(FirestoreDocument):
     def star_player2(self) -> str:
         return self.player2_names[0] if self.player2_names else CupConfig.TBD
 
+    @property
+    def star_players(self) -> List[str]:
+        return [self.star_player1, self.star_player2]
+
     def get_group1_url(self, players: List[Player]) -> str:
         return self.get_url(players, self.star_player1)
 
@@ -148,6 +152,10 @@ class CupSeries(FirestoreDocument):
     @property
     def group2_score(self) -> int:
         return self.get_score(self.PLAYER2)
+
+    @property
+    def group_scores(self) -> List[int]:
+        return [self.group1_score, self.group2_score]
 
     @property
     def match_identity(self) -> str:
@@ -248,6 +256,80 @@ class CupSeries(FirestoreDocument):
     @property
     def total_games(self):
         return len(self.match_player1_names)
+
+    def get_winner_index(self):
+        if not self.is_series_completed():
+            raise SeriesNotCompleted
+        return 0 if self.is_group1_winner() else 1
+
+    def get_loser_index(self):
+        return 0 if self.get_winner_index() == 1 else 1
+
+    @property
+    def winner_full_name(self) -> str:
+        try:
+            return self.group_full_names[self.get_winner_index()]
+        except SeriesNotCompleted:
+            return CupConfig.TBD
+
+    @property
+    def winner_star_player_name(self) -> str:
+        try:
+            return self.star_players[self.get_winner_index()]
+        except SeriesNotCompleted:
+            return CupConfig.TBD
+
+    @property
+    def loser_star_player_name(self) -> str:
+        try:
+            return self.star_players[self.get_loser_index()]
+        except SeriesNotCompleted:
+            return CupConfig.TBD
+
+    @property
+    def loser_group_name(self) -> str:
+        loser_name: str = self.loser_star_player_name
+        return CupConfig.TBD if loser_name == CupConfig.TBD else loser_name[:2]
+
+    @property
+    def winner_rank(self) -> int:
+        try:
+            return self.group_ranks[self.get_winner_index()]
+        except SeriesNotCompleted:
+            return 0
+
+    @property
+    def loser_rank(self) -> int:
+        try:
+            return self.group_ranks[self.get_loser_index()]
+        except SeriesNotCompleted:
+            return 0
+
+    @property
+    def winner_score(self) -> int:
+        try:
+            return self.group_scores[self.get_winner_index()]
+        except SeriesNotCompleted:
+            return 0
+
+    @property
+    def loser_score(self) -> int:
+        try:
+            return self.group_scores[self.get_loser_index()]
+        except SeriesNotCompleted:
+            return 0
+
+    def get_winner_url(self, players: List[Player]) -> str:
+        try:
+            return self.get_url(players, self.winner_star_player_name)
+        except SeriesNotCompleted:
+            return url_for("static", filename="default.jpg")
+
+    def get_loser_url(self, players: List[Player]) -> str:
+        try:
+            return self.get_url(players, self.loser_star_player_name)
+        except SeriesNotCompleted:
+            return url_for("static", filename="default.jpg")
 
 
 CupSeries.init("cup_series")

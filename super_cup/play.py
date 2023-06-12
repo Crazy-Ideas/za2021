@@ -224,3 +224,25 @@ def update_play_result(request: Munch) -> Munch:
     perform_io_task(update_tasks)
     rsp.message.success = SuccessMessage.PLAY_RESULT
     return rsp.dict
+
+
+def get_all_seasons(request: Munch) -> Munch:
+    rsp = StandardResponse(request, RequestType.CUP_ALL_SEASONS)
+    if rsp.message.error:
+        return rsp.dict
+    if not CupConfig.is_valid_player_per_group(rsp.request.player_per_group):
+        return rsp.with_error_message("Invalid Cup type.")
+    total_groups: int = CupConfig.get_total_group_count(rsp.request.player_per_group)
+    final_round_number: int = RoundCalculator(total_groups).final_round_number
+    finals: List[CupSeries] = CupSeries.objects.filter_by(player_per_group=rsp.request.player_per_group, round_number=final_round_number,
+                                                          series_completed_status=True).get()
+    if not finals:
+        rsp.data.players = rsp.data.finals = list()
+        return rsp.with_error_message("No completed series as yet.")
+    finals.sort(key=lambda item: item.season, reverse=True)
+    star_players = set(star_player for final in finals for star_player in final.star_players)
+    get_players_task = [Player.objects.filter_by(name=star_player).first for star_player in star_players]
+    players: List[Player] = perform_io_task(get_players_task)
+    rsp.data.players = players
+    rsp.data.finals = finals
+    return rsp.with_success_message(SuccessMessage.GET_SEASON)

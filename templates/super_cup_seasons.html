@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block app_content %}
+    {% for series in finals %}
+        <div class="row">
+            <div class="col p-2 m-2">
+                <div class="card py-2 my-2">
+                    <div class="card-img-top ">
+                        <div class="row ">
+                            <div class="col">
+                                <div class="modal-body-preview">
+                                    <img src="{{ series.get_winner_url(players) }}" class="img-fluid"
+                                         alt=" {{ series.winner_full_name }} ({{ series.winner_rank }})"
+                                    />
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ series.winner_full_name }} ({{ series.winner_rank }})
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col p-2 m-2">
+                <div class="card py-2 my-2">
+                    <div class="card-header">
+                        SC{{ series.player_per_group }} Season {{ series.season }}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col">
+                                <div class="modal-body-preview">
+                                    <img src="{{ series.get_loser_url(players) }}" class="img-fluid"
+                                         alt=" {{ series.loser_group_name }} ({{ series.loser_rank }})"
+                                    />
+                                    <div class="round-image-gradient"></div>
+                                    <div class="preview-name-container small font-weight-bold text-white">
+                                        {{ series.loser_group_name }} ({{ series.loser_rank }})
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="fw-bold text-muted h6">
+                                            {{ series.winner_score }} : {{ series.loser_score }}
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <a class="btn btn-primary btn-floating"
+                                           href="{{ url_for("super_cup.view_season",  season=series.season, player_per_group=series.player_per_group) }}">
+                                            <i class="fas fa-people-arrows fa-lg text-white"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

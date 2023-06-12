@@ -14,6 +14,7 @@ class RequestType:
     CUP_PLAY_RESULT = Munch(season=int(), round_number=int(), match_number=int(), winner=str(), loser=str(), player_per_group=int())
     CUP_NEXT_MATCH = Munch(player_per_group=int())
     CUP_CREATE_SEASON = Munch(player_per_group=int())
+    CUP_ALL_SEASONS = CUP_CREATE_SEASON
 
 class SuccessMessage:
     NEXT_MATCH = "Next match up ready."
@@ -63,3 +64,10 @@ class StandardResponse:
     def get(self):
         return self.data
 
+    def with_error_message(self, error_message: str) -> Munch:
+        self.message.error = error_message
+        return self.dict
+
+    def with_success_message(self, success_message: str) -> Munch:
+        self.message.success = success_message
+        return self.dict

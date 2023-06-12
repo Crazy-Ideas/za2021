@@ -72,15 +72,19 @@
                     <div class="card-body d-flex justify-content-around py-6">
                         <button onclick="selectPlayer('{{ current_match_player1 }}')"
                                 class="btn btn-success btn-floating" type="button">
-                            <i class="fas fa-caret-left  fa-lg text-white"></i>
+                            <i class="fas fa-caret-left  fa text-white"></i>
                         </button>
                         <a class="btn btn-primary btn-floating"
                            href="{{ url_for("super_cup.view_season",  season=series.season, player_per_group=series.player_per_group) }}">
-                            <i class="fas fa-people-arrows fa-lg text-white"></i>
+                            <i class="fas fa-people-arrows fa text-white"></i>
+                        </a>
+                        <a class="btn btn-primary btn-floating"
+                           href="{{ url_for("super_cup.view_all_seasons",  player_per_group=series.player_per_group) }}">
+                            <i class="fas fa-trophy fa text-white"></i>
                         </a>
                         <button onclick="selectPlayer('{{ current_match_player2 }}')"
                                 class="btn btn-success btn-floating" type="button">
-                            <i class="fas fa-caret-right fa-lg text-white"></i>
+                            <i class="fas fa-caret-right fa text-white"></i>
                         </button>
                     </div>
                     <form id="selectForm" method="POST" novalidate>
