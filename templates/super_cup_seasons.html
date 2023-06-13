@@ -2,8 +2,8 @@
 {% block app_content %}
     {% for series in finals %}
         <div class="row">
-            <div class="col p-2 m-2">
-                <div class="card py-2 my-2">
+            <div class="col p-1 m-1">
+                <div class="card py-1 my-1">
                     <div class="card-img-top ">
                         <div class="row ">
                             <div class="col">
@@ -21,14 +21,11 @@
                     </div>
                 </div>
             </div>
-            <div class="col p-2 m-2">
-                <div class="card py-2 my-2">
-                    <div class="card-header">
-                        SC{{ series.player_per_group }} Season {{ series.season }}
-                    </div>
+            <div class="col">
+                <div class="card py-1 my-1">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col">
+                            <div class="col-8">
                                 <div class="modal-body-preview">
                                     <img src="{{ series.get_loser_url(players) }}" class="img-fluid"
                                          alt=" {{ series.loser_group_name }} ({{ series.loser_rank }})"
@@ -39,20 +36,34 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="row">
+                            <div class="col-4">
+                                <div class="row py-1 my-1">
                                     <div class="col">
-                                        <div class="fw-bold text-muted h6">
+                                        <div class="text-muted small">
+                                            SC{{ series.player_per_group }}S{{ series.season }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row py-1 my-1">
+                                    <div class="col">
+                                        <div class="small text-muted">
                                             {{ series.winner_score }} : {{ series.loser_score }}
                                         </div>
-
+                                    </div>
+                                </div>
+                                <div class="row py-1 my-1">
+                                    <div class="col">
+                                        <a class="btn btn-primary btn-floating"
+                                           href="{{ url_for("super_cup.view_season",  season=series.season, player_per_group=series.player_per_group) }}">
+                                            <i class="fas fa-people-arrows text-white"></i>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col">
                                         <a class="btn btn-primary btn-floating"
-                                           href="{{ url_for("super_cup.view_season",  season=series.season, player_per_group=series.player_per_group) }}">
-                                            <i class="fas fa-people-arrows fa-lg text-white"></i>
+                                           href="{{ url_for("super_cup.play", player_per_group=series.player_per_group) }}">
+                                            <i class="fas fa-play text-white"></i>
                                         </a>
                                     </div>
                                 </div>
