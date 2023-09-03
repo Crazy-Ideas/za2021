@@ -54,7 +54,7 @@ def create_season(request: Munch) -> Munch:
     adventurer_group_names: List[str] = sample(list(groupwise_players), k=AdventureConfig.INITIAL_ADVENTURERS_COUNT)
     new_adventure.adventurers = [sample(groupwise_players[group_name], k=1)[0] for group_name in adventurer_group_names]
     shuffle(new_adventure.adventurers)
-    groups: List[Group] = Group.objects.filter_by(qualification_locked=True).get()
+    groups: List[Group] = Group.objects.order_by("group_rank").limit(100).get()
     new_adventure.init_remaining_opponents(groups)
     set_opponent(new_adventure, groupwise_players, groups)
     new_adventure.create()
@@ -157,6 +157,7 @@ def get_urls(input_player_names: Munch) -> Munch:
         task_list: List[Callable] = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
         threads = [executor.submit(task) for task in task_list]
         players = [future.result() for future in as_completed(threads)]
+        players = [player for player in players if player]
 
     def update_player_url(player: Player):
         for key, player_list in player_urls.items():
