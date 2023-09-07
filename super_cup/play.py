@@ -11,14 +11,15 @@ from super_cup.errors import InvalidNumberOfPlayersProvidedForInitialization, Gr
 from super_cup.models import CupConfig, CupSeries, RoundCalculator
 
 
-def select_players(group_count: int, player_count_per_group: int) -> List[Player]:
-    filtered_player_count: int = group_count * player_count_per_group * player_count_per_group
-    if player_count_per_group == 1:
-        filtered_player_count = 1000
+def select_players(group_count: int, player_per_group: int) -> List[Player]:
+    if player_per_group == 1:
+        selected_players: List[Player] = Player.objects.order_by("rank").limit(CupConfig.get_total_group_count(player_per_group)).get()
+        return selected_players
+    filtered_player_count: int = group_count * player_per_group * player_per_group
     players: List[Player] = Player.objects.order_by("rank").limit(filtered_player_count).get()
     players.sort(key=lambda item: item.rank, reverse=False)
     selected_players: List[Player] = list()
-    expected_count: int = group_count * player_count_per_group
+    expected_count: int = group_count * player_per_group
     selected_groups: set = set()
     nominated_groups: dict = dict()
     for player in players:
@@ -27,7 +28,7 @@ def select_players(group_count: int, player_count_per_group: int) -> List[Player
         if player.group_name not in nominated_groups:
             nominated_groups[player.group_name] = list()
         nominated_groups[player.group_name].append(player)
-        if len(nominated_groups[player.group_name]) != player_count_per_group:
+        if len(nominated_groups[player.group_name]) != player_per_group:
             continue
         selected_groups.add(player.group_name)
         selected_players.extend(nominated_groups[player.group_name])
@@ -70,24 +71,53 @@ def create_season(request: Munch) -> Munch:
     group_names: List[str] = list({player.group_name for player in selected_players})
     get_group_tasks: List[Callable] = [Group.objects.filter_by(name=group_name).first for group_name in group_names]
     groups: List[Group] = perform_io_task(get_group_tasks)
-    shuffle(groups)
     series_to_be_created: List[CupSeries] = list()
-    group_index: int = 0
-    for round_number in range(1, round_calculator.total_rounds + 1):
-        for match_number in range(1, round_calculator.total_matches_per_round(round_number) + 1):
-            series: CupSeries = CupSeries(new_season, round_number, match_number, group_count, player_count_per_group)
-            series_to_be_created.append(series)
-            if round_number != 1:
-                continue
-            try:
-                group_index = initialize_series(series, selected_players, groups, group_index)
-                group_index = initialize_series(series, selected_players, groups, group_index)
-            except InvalidNumberOfPlayersProvidedForInitialization:
-                rsp.message.error = "Invalid number of players provided for initialization."
-                return rsp.dict
-            except GroupAlreadyInitialized:
-                rsp.message.error = "Group already initialized."
-                return rsp.dict
+    if player_count_per_group != 1:
+        shuffle(groups)
+        group_index: int = 0
+        for round_number in range(1, round_calculator.total_rounds + 1):
+            for match_number in range(1, round_calculator.total_matches_per_round(round_number) + 1):
+                series: CupSeries = CupSeries(new_season, round_number, match_number, group_count, player_count_per_group)
+                series_to_be_created.append(series)
+                if round_number != 1:
+                    continue
+                try:
+                    players_in_this_series: List[Player] = [player for player in selected_players if
+                                                            player.group_name == groups[group_index].name]
+                    series.initialize_group(groups[group_index], players_in_this_series)
+                    group_index += 1
+                    players_in_this_series: List[Player] = [player for player in selected_players if
+                                                            player.group_name == groups[group_index].name]
+                    series.initialize_group(groups[group_index], players_in_this_series)
+                    group_index += 1
+                except InvalidNumberOfPlayersProvidedForInitialization:
+                    rsp.message.error = "Invalid number of players provided for initialization."
+                    return rsp.dict
+                except GroupAlreadyInitialized:
+                    rsp.message.error = "Group already initialized."
+                    return rsp.dict
+    else:  # When player count is 1 it is for top 1000 players which might be from the same groups
+        shuffle(selected_players)  # TODO: consider seeding
+        player_index: int = 0
+        for round_number in range(1, round_calculator.total_rounds + 1):
+            for match_number in range(1, round_calculator.total_matches_per_round(round_number) + 1):
+                series: CupSeries = CupSeries(new_season, round_number, match_number, group_count, player_count_per_group)
+                series_to_be_created.append(series)
+                if round_number != 1:
+                    continue
+                try:
+                    players_1: List[Player] = [selected_players[player_index]]
+                    player_index += 1
+                    series.initialize_group(next(group for group in groups if group.name == players_1[0].group_name), players_1)
+                    players_2: List[Player] = [selected_players[player_index]]
+                    player_index += 1
+                    series.initialize_group(next(group for group in groups if group.name == players_2[0].group_name), players_2)
+                except InvalidNumberOfPlayersProvidedForInitialization:
+                    rsp.message.error = "Invalid number of players provided for initialization."
+                    return rsp.dict
+                except GroupAlreadyInitialized:
+                    rsp.message.error = "Group already initialized."
+                    return rsp.dict
     CupSeries.objects.create_all(CupSeries.objects.to_dicts(series_to_be_created))
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
@@ -100,7 +130,13 @@ def get_season(request: Munch) -> Munch:
     if not CupConfig.is_valid_player_per_group(rsp.request.player_per_group):
         rsp.message.error = "Invalid type of Super Cup."
         return rsp.dict
-    series_list = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group).get()
+    total_group_count: int = CupConfig.get_total_group_count(rsp.request.player_per_group)
+    round_calculator = RoundCalculator(total_group_count)
+    if rsp.request.limited:
+        series_query = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group)
+        series_list = series_query.filter("round_number", ">=", round_calculator.pre_quarter_final_round_number).get()
+    else:
+        series_list = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group).get()
     if not series_list:
         rsp.message.error = "Season not found."
         return rsp.dict
@@ -108,10 +144,16 @@ def get_season(request: Munch) -> Munch:
     player_names: List[str] = [match.star_player1 for match in series_list if match.is_group1_initialized()]
     player_names += [match.star_player2 for match in series_list if match.is_group2_initialized()]
     player_names = list(set(player_names))
-    get_player_tasks = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
-    rsp.data.players = perform_io_task(get_player_tasks)
-    round_calculator = RoundCalculator(series_list[0].total_group_count)
-    rsp.data.earlier_rounds = [series for series in series_list if series.round_number in round_calculator.earlier_round_numbers]
+    if player_names:
+        get_player_tasks = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
+        rsp.data.players = perform_io_task(get_player_tasks)
+    else:
+        rsp.data.players = list()
+    if rsp.request.limited:
+        rsp.data.earlier_rounds = [series for series in series_list
+                                   if series.round_number == round_calculator.pre_quarter_final_round_number]
+    else:
+        rsp.data.earlier_rounds = [series for series in series_list if series.round_number in round_calculator.earlier_round_numbers]
     rsp.data.quarter_finals = [series for series in series_list if series.round_number == round_calculator.quarter_final_round_number]
     rsp.data.finals = [series for series in series_list
                        if series.round_number in (round_calculator.semi_final_round_number, round_calculator.final_round_number)]

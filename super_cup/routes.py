@@ -9,10 +9,10 @@ from super_cup.models import CupSeries
 from super_cup.play import get_season, create_season, get_next_match, get_all_seasons
 
 
-@bp.route("/super_cup/<int:player_per_group>/seasons/<int:season>")
+@bp.route("/super_cup/<int:player_per_group>/seasons/<int:season>/limited/<int:limited>")
 @cookie_login_required
-def view_season(player_per_group: int, season: int):
-    rsp = get_season(Munch(season=season, player_per_group=player_per_group))
+def view_season(player_per_group: int, season: int, limited: int):
+    rsp = get_season(Munch(season=season, player_per_group=player_per_group, limited=bool(limited)))
     if rsp.message.error:
         flash(rsp.message.error)
         return redirect(url_for("super_cup.view_last_season", player_per_group=player_per_group))
@@ -27,7 +27,7 @@ def view_last_season(player_per_group: int):
     if not series:
         flash("Create a new season.")
         return render_template("super_cup_series.html", title="Create Season", no_seasons=True, player_per_group=player_per_group)
-    return redirect(url_for("super_cup.view_season", season=series.season, player_per_group=player_per_group))
+    return redirect(url_for("super_cup.view_season", season=series.season, player_per_group=player_per_group, limited=1))
 
 
 @bp.route("/super_cup/<int:player_per_group>/seasons")

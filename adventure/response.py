@@ -10,7 +10,7 @@ class RequestType:
     CREATE_SEASON = Munch()
     NEXT_MATCH = Munch()
     GET_SEASON = Munch(season=int(), round=int())
-    CUP_GET_SEASON = Munch(season=int(), player_per_group=int())
+    CUP_GET_SEASON = Munch(season=int(), player_per_group=int(), limited=bool())
     CUP_PLAY_RESULT = Munch(season=int(), round_number=int(), match_number=int(), winner=str(), loser=str(), player_per_group=int())
     CUP_NEXT_MATCH = Munch(player_per_group=int())
     CUP_CREATE_SEASON = Munch(player_per_group=int())

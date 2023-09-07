@@ -15,7 +15,9 @@ class CupConfig:
     TYPE = "super_cup"
     TBD = "TBD"
     VALID_PLAYERS_PER_GROUP = (1, 3, 5, 7, 9, 11, 13)
-    INDEXED_GROUP_COUNT = (128, 64, 16, 8, 8, 4, 4)
+    INDEXED_GROUP_COUNT = (1024, 64, 16, 8, 8, 4, 4)
+
+    # TODO: For Seeding top 32 in players in 1024 players  list(zip_longest(*[iter(l2)]*31))
 
     @classmethod
     def is_valid_player_per_group(cls, player_per_group) -> bool:
@@ -251,7 +253,7 @@ class CupSeries(FirestoreDocument):
 
     @property
     def game_number(self):
-        return len(self.match_winner_names)
+        return len(self.match_winner_names) + 1
 
     @property
     def total_games(self):
@@ -348,16 +350,20 @@ class RoundCalculator:
         return int(self.group_count / 2 ** round_number)
 
     @property
+    def pre_quarter_final_round_number(self) -> int:
+        return self.total_rounds - 3
+
+    @property
     def quarter_final_round_number(self) -> int:
         return self.total_rounds - 2
 
     @property
-    def final_round_number(self) -> int:
-        return self.total_rounds
-
-    @property
     def semi_final_round_number(self) -> int:
         return self.total_rounds - 1
+
+    @property
+    def final_round_number(self) -> int:
+        return self.total_rounds
 
     @property
     def earlier_round_numbers(self) -> List[int]:
