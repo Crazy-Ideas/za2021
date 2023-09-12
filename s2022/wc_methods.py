@@ -18,6 +18,7 @@ class WorldCupMatch:
         self.match: Optional[Match] = None
         self.player1: Optional[Player] = None
         self.player2: Optional[Player] = None
+        self.last_order: int = int()
 
     def update_result(self, winning_name: str, winning_margin: str):
         self.match.winner = winning_name
@@ -70,6 +71,7 @@ def get_wc_match() -> Optional[WorldCupMatch]:
     players: List[Player] = Player.objects.filter("name", Player.objects.IN, [match.player1, match.player2]).get()
     wc_match.player1 = next(player for player in players if player.name == match.player1)
     wc_match.player2 = next(player for player in players if player.name == match.player2)
+    wc_match.last_order = Match.objects.filter_by(season=SEASON).order_by("order", Match.objects.ORDER_DESCENDING).first().order
     return wc_match
 
 
