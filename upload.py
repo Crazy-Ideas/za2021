@@ -12,16 +12,20 @@ from google.cloud.storage import Client
 from munch import Munch
 
 from main import generate_url
-from models import Player, Group, Match
+from models import Player, Group, Match, Standing
+from s2022 import wc_methods
 
 NEW_PLAYERS: dict = {
-    "EO": "Erin Moriarty",
-    "FA": "Freya Allan",
-    "IF": "Isabelle Fuhrman",
-    "KE": "Kiernan Shipka",
-    "NC": "Anya Chalotra",
-    "JK": "Joey King",
-    "MC": "Mackenzie Foy",
+    "AA": "Ana de Armas",
+    "CH": "Chloe Bennet",
+    "HA": "Hayley Atwell",
+    "HT": "Hailee Steinfeld",
+    "JO": "Jenna Ortega",
+    "ML": "Milly Alcock",
+    "MX": "Mckenna Grace",
+    "NB": "Nina Dobrev",
+    "RT": "Robin Tunney",
+    "TM": "Thomasin McKenzie",
 }
 
 
@@ -36,11 +40,13 @@ def load_from_temp():
     created_groups: List[Group] = list()
     total_files: int = len(os.listdir("temp"))
     for index, filename in enumerate(os.listdir("temp")):
-        if filename == "firestore_export":
+        if filename.startswith("firestore_export"):
             continue
         if filename[-5:] == ".json":
             continue
         if filename[-7:] == ".pickle":
+            continue
+        if filename[-4:] == ".log":
             continue
         player_name = filename[:5]
         group_name = filename[:2]
@@ -235,7 +241,7 @@ def rename_player_matches(old_name: str, new_name: str):
 
 def update_json():
     # player.json contains ZA2019 data is used in upload only. _score_players and reset_player_score / rename player matches
-    # player_names.json is used in playing random friendlies, s2022 (creating new round of matches)
+    # player_names.json is used in playing random friendlies, s2022/world cup (creating new round of matches)
     # groupwise_players.json is used in adventure for creating a new season
     players: List[Player] = Player.objects.get()
     player_list: List[str] = [player.name for player in players]
@@ -287,3 +293,18 @@ def analyze_player_rankings(upto: int = -1, team_count: int = 16, player_count_p
 def update_players_pickle():
     with open("temp/players.pickle", "wb") as file:
         pickle.dump(Player.objects.get(), file)
+
+
+def update_standings():
+    # This is required for S2022 (World Cup) when new groups are added
+    standings: List[Standing] = Standing.objects.filter_by(season=wc_methods.SEASON).get()
+    groups: List[Group] = Group.objects.get()
+    standing_to_be_created: List[Standing] = list()
+    for group in groups:
+        if any(group.name == standing.group_name for standing in standings):
+            continue
+        standing: Standing = Standing(season=wc_methods.SEASON, group_name=group.name, group_fullname=group.fullname,
+                                      url_name=group.player_name, url=group.url)
+        standing_to_be_created.append(standing)
+    Standing.objects.create_all(Standing.objects.to_dicts(standing_to_be_created))
+    print(f"{len(standing_to_be_created)} standings created.")
