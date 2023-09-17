@@ -14,10 +14,12 @@ SEASON = 2022
 
 class WorldCupMatch:
 
-    def __int__(self):
+    def __init__(self):
         self.match: Optional[Match] = None
         self.player1: Optional[Player] = None
         self.player2: Optional[Player] = None
+        self.standing1: Optional[Standing] = None
+        self.standing2: Optional[Standing] = None
         self.last_order: int = int()
 
     def update_result(self, winning_name: str, winning_margin: str):
@@ -72,6 +74,11 @@ def get_wc_match() -> Optional[WorldCupMatch]:
     wc_match.player1 = next(player for player in players if player.name == match.player1)
     wc_match.player2 = next(player for player in players if player.name == match.player2)
     wc_match.last_order = Match.objects.filter_by(season=SEASON).order_by("order", Match.objects.ORDER_DESCENDING).first().order
+    group_names: List[str] = [wc_match.player1.group_name, wc_match.player2.group_name]
+    standings: List[Standing] = Standing.objects.filter("group_name", Player.objects.IN, group_names).get()
+    standings = [standing for standing in standings if standing.season == SEASON]
+    wc_match.standing1 = next(standing for standing in standings if standing.group_name == wc_match.player1.group_name)
+    wc_match.standing2 = next(standing for standing in standings if standing.group_name == wc_match.player2.group_name)
     return wc_match
 
 
