@@ -1,13 +1,13 @@
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from random import sample, shuffle
 from typing import List, Callable, Tuple
 
 from munch import Munch
 
-from adventure.errors import GroupwiseFileError, UnableToSetOpponent
+from adventure.errors import UnableToSetOpponent
 from adventure.models import Adventure, AdventureConfig
 from adventure.response import StandardResponse, RequestType, SuccessMessage
+from methods import perform_io_task
 from models import Group, Player, Match
 
 
@@ -23,19 +23,16 @@ def get_latest_adventure() -> Adventure:
     return current_adventure
 
 
-def set_opponent(adventure: Adventure, groupwise_players: dict, groups: List[Group]) -> None:
+def set_opponent(adventure: Adventure) -> None:
     opponent_group_name: str = adventure.get_next_opponent()
     if not opponent_group_name:
         raise UnableToSetOpponent
-    if groups:
-        opponent_group: Group = next((group for group in groups if group.name == opponent_group_name), None)
-    else:
-        opponent_group: Group = Group.objects.filter_by(name=opponent_group_name).first()
-    try:
-        player_names = groupwise_players[opponent_group_name]
-    except KeyError:
-        raise GroupwiseFileError
-    adventure.set_opponent(opponent_group, player_names)
+    task_list: List[Callable] = [Group.objects.filter_by(name=opponent_group_name).first,
+                                 Player.objects.filter_by(group_name=opponent_group_name).get]
+    results = perform_io_task(task_list)
+    players: List[Player] = next((player_list for player_list in results if isinstance(player_list, list)), list())
+    opponent_group: Group = next((group for group in results if isinstance(group, Group)), None)
+    adventure.set_opponent(opponent_group, players)
     return
 
 
@@ -56,7 +53,7 @@ def create_season(request: Munch) -> Munch:
     shuffle(new_adventure.adventurers)
     groups: List[Group] = Group.objects.order_by("group_rank").limit(100).get()
     new_adventure.init_remaining_opponents(groups)
-    set_opponent(new_adventure, groupwise_players, groups)
+    set_opponent(new_adventure)
     new_adventure.create()
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
@@ -71,13 +68,11 @@ def create_match(season: int, round_number: int, player1: str, player2: str, win
 def get_adventure_players_groups(rsp) -> Tuple[Adventure, List[Player], List[Group]]:
     player_names: List[str] = [rsp.request.winner, rsp.request.loser]
     group_names: List[str] = [rsp.request.winner[:2], rsp.request.loser[:2]]
-    with ThreadPoolExecutor() as executor:
-        task_list: List[Callable] = list()
-        task_list.append(Adventure.objects.filter_by(season=rsp.request.season, round=rsp.request.round).get)
-        task_list.append(Player.objects.filter("name", Player.objects.IN, player_names).get)
-        task_list.append(Group.objects.filter("name", Group.objects.IN, group_names).get)
-        threads = [executor.submit(task) for task in task_list]
-        results = [future.result() for future in as_completed(threads)]
+    task_list: List[Callable] = list()
+    task_list.append(Adventure.objects.filter_by(season=rsp.request.season, round=rsp.request.round).get)
+    task_list.append(Player.objects.filter("name", Player.objects.IN, player_names).get)
+    task_list.append(Group.objects.filter("name", Group.objects.IN, group_names).get)
+    results = perform_io_task(task_list)
     players: List[Player] = next((result for result in results if result and isinstance(result[0], Player)), list())
     groups: List[Group] = next((result for result in results if result and isinstance(result[0], Group)), list())
     adventure: Adventure = next((result[0] for result in results if result and isinstance(result[0], Adventure)), None)
@@ -130,9 +125,7 @@ def update_play_result(request: dict) -> Munch:
     task_list.append(match.create)
     adventure.update_result(rsp.request.winner, rsp.request.acquired)
     task_list.append(adventure.save)
-    with ThreadPoolExecutor(max_workers=len(task_list)) as executor:
-        threads = [executor.submit(task) for task in task_list]
-        [future.result() for future in as_completed(threads)]
+    perform_io_task(task_list)
     if not adventure.is_round_over():
         rsp.message.success = SuccessMessage.PLAY_RESULT
         return rsp.dict
@@ -141,9 +134,12 @@ def update_play_result(request: dict) -> Munch:
         rsp.message.error = f"Game is over. You {result}. Create a new season to play again."
         return rsp.dict
     # Create a new round for the adventure in the same season
-    new_round = Adventure.create_next_round(adventure)
-    groupwise_players: dict = read_groupwise_players()
-    set_opponent(new_round, groupwise_players, groups=list())
+    task_list: List[Callable] = [Player.objects.filter_by(name=adventurer).first for adventurer in adventure.adventurers if
+                                 adventurer not in adventure.released]
+    task_list.extend([Player.objects.filter_by(name=adventurer).first for adventurer in adventure.acquired])
+    adventurers: List[Player] = perform_io_task(task_list)
+    new_round = Adventure.create_next_round(adventure, adventurers)
+    set_opponent(new_round)
     new_round.create()
     rsp.message.error = "New Round Created."
     return rsp.dict
@@ -153,11 +149,9 @@ def get_urls(input_player_names: Munch) -> Munch:
     player_urls: Munch = Munch.fromDict({key: [{"name": name, "url": str(), "rank": int()} for name in player_list]
                                          for key, player_list in input_player_names.items()})
     player_names: List[str] = [name for _, player_list in input_player_names.items() for name in player_list]
-    with ThreadPoolExecutor() as executor:
-        task_list: List[Callable] = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
-        threads = [executor.submit(task) for task in task_list]
-        players = [future.result() for future in as_completed(threads)]
-        players = [player for player in players if player]
+    task_list: List[Callable] = [Player.objects.filter_by(name=player_name).first for player_name in player_names]
+    results = perform_io_task(task_list)
+    players = [player for player in results if player]
 
     def update_player_url(player: Player):
         for key, player_list in player_urls.items():

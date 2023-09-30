@@ -34,8 +34,6 @@ app.register_blueprint(s2021_bp)
 app.register_blueprint(adventure_bp)
 app.register_blueprint(super_cup_bp)
 
-from routes import *
-
 if __name__ == "__main__":
     app.run()
 
@@ -47,6 +45,8 @@ def make_shell_context() -> dict:
     from main import update_url, generate_url
     from models import Player, Group, Series, Standing, Match, FINAL_SERIES_TYPES
     from super_cup.models import CupSeries
+    from adventure.models import Adventure
+    import adventure.play as adventure_play
     import upload
     return {
         "User": User,
@@ -62,4 +62,6 @@ def make_shell_context() -> dict:
         "game": upload,
         "wc_methods": wc_methods,
         "CupSeries": CupSeries,
+        "Adventure": Adventure,
+        "adventure_play": adventure_play,
     }
