@@ -6,7 +6,7 @@ from flask_login import LoginManager
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-cloud.json"
 
-from models import User
+
 from secret import SecretConfig
 
 app = Flask(__name__)
@@ -17,6 +17,7 @@ login = LoginManager(app)
 login.login_view = "login"
 login.session_protection = "strong" if CI_SECURITY else "basic"
 
+from models import User
 
 @login.user_loader
 def load_user(email: str) -> Optional[User]:
@@ -24,6 +25,8 @@ def load_user(email: str) -> Optional[User]:
     return user
 
 
+# noinspection PyUnresolvedReferences
+import routes
 from s2022 import bp as world_cup_bp
 from s2021 import bp as s2021_bp
 from adventure import bp as adventure_bp
