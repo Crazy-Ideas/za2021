@@ -118,7 +118,11 @@ def create_season(request: Munch) -> Munch:
                 except GroupAlreadyInitialized:
                     rsp.message.error = "Group already initialized."
                     return rsp.dict
-    CupSeries.objects.create_all(CupSeries.objects.to_dicts(series_to_be_created))
+    chunk_size: int = 100
+    batch_series_to_be_created: List[List[CupSeries]] = [series_to_be_created[i: i + chunk_size]
+                                                         for i in range(0, len(series_to_be_created), chunk_size)]
+    for batch_series in batch_series_to_be_created:
+        CupSeries.objects.create_all(CupSeries.objects.to_dicts(batch_series))
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
 
