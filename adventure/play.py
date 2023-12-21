@@ -51,7 +51,7 @@ def create_season(request: Munch) -> Munch:
     adventurer_group_names: List[str] = sample(list(groupwise_players), k=AdventureConfig.INITIAL_ADVENTURERS_COUNT)
     new_adventure.adventurers = [sample(groupwise_players[group_name], k=1)[0] for group_name in adventurer_group_names]
     shuffle(new_adventure.adventurers)
-    groups: List[Group] = Group.objects.order_by("group_rank").limit(100).get()
+    groups: List[Group] = Group.objects.order_by("rank").limit(100).get()
     new_adventure.init_remaining_opponents(groups)
     set_opponent(new_adventure)
     new_adventure.create()
