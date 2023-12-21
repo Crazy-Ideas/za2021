@@ -68,7 +68,18 @@
                         <strong class="me-1 text-muted">{{ series.game_number }} of {{ series.total_games }}</strong>
                     </span>
                     </div>
-                    <hr class="hr mb-2">
+                    <div class="card-body d-flex justify-content-around ">
+                    <span>
+                        <strong class="me-1 text-muted">{{ series.group1_full_name }} ({{ series.group1_rank }})</strong>
+                    </span>
+                        <span>
+                        <strong class="me-1 text-muted">v</strong>
+                    </span>
+                        <span>
+                        <strong class="me-1 text-muted">{{ series.group2_full_name }} ({{ series.group2_rank }})</strong>
+                    </span>
+                    </div>
+                    <hr class="hr mb-1">
                     <div class="card-body d-flex justify-content-around py-6">
                         <button onclick="selectPlayer('{{ current_match_player1 }}')"
                                 class="btn btn-success btn-floating" type="button">

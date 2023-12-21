@@ -80,7 +80,7 @@ def cookie_login_required(route_function):
 
 
 def perform_io_task(task_list: List[Callable]):
-    max_workers = min(64, len(task_list))
+    max_workers = min(100, len(task_list))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         threads = [executor.submit(task) for task in task_list]
         results = [future.result() for future in as_completed(threads)]

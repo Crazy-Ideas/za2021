@@ -1,3 +1,4 @@
+import itertools
 from random import shuffle
 from typing import List, Callable
 
@@ -137,8 +138,15 @@ def get_season(request: Munch) -> Munch:
     total_group_count: int = CupConfig.get_total_group_count(rsp.request.player_per_group)
     round_calculator = RoundCalculator(total_group_count)
     if rsp.request.limited:
-        series_query = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group)
-        series_list = series_query.filter("round_number", ">=", round_calculator.pre_quarter_final_round_number).get()
+        # series_query = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group)
+        # series_list = series_query.filter("round_number", ">=", round_calculator.pre_quarter_final_round_number).get()
+        get_series_tasks = list()
+        for round_number in range(round_calculator.pre_quarter_final_round_number, round_calculator.final_round_number + 1):
+            series_query = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group)
+            task = series_query.filter_by(round_number=round_number).get
+            get_series_tasks.append(task)
+        results = perform_io_task(get_series_tasks)
+        series_list: List[CupSeries] = list(itertools.chain(*results))
     else:
         series_list = CupSeries.objects.filter_by(season=rsp.request.season, player_per_group=rsp.request.player_per_group).get()
     if not series_list:
@@ -184,9 +192,16 @@ def get_next_match(request: Munch) -> Munch:
     except SeriesCompleted:
         rsp.message.error = "Exception. Series completed."
         return rsp.dict
-    rsp.data.players = Player.objects.filter("name", Player.objects.IN, player_names).get()
-    if len(rsp.data.players) != 2:
+    players = Player.objects.filter("name", Player.objects.IN, player_names).get()
+    if len(players) != 2:
         rsp.message.error = "Players for next match not found"
+        return rsp.dict
+    if players[0].name == series.current_match_player1_name:
+        rsp.data.players = [players[0], players[1]]
+    elif players[0].name == series.current_match_player2_name:
+        rsp.data.players = [players[1], players[0]]
+    else:
+        rsp.message.error = "Invalid player found for next match"
         return rsp.dict
     rsp.message.success = SuccessMessage.NEXT_MATCH
     return rsp.dict
