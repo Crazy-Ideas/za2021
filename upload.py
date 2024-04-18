@@ -14,6 +14,7 @@ from munch import Munch
 from main import generate_url
 from models import Player, Group, Match, Standing
 from s2022 import wc_methods
+from super_cup.models import CupSeries, RoundCalculator, CupConfig
 
 NEW_PLAYERS: dict = {
     "AA": "Ana de Armas",
@@ -308,3 +309,41 @@ def update_standings():
         standing_to_be_created.append(standing)
     Standing.objects.create_all(Standing.objects.to_dicts(standing_to_be_created))
     print(f"{len(standing_to_be_created)} standings created.")
+
+
+def fix_cup(player_per_group: int):
+    query = CupSeries.objects.filter_by(player_per_group=1)
+    query = query.order_by("season", CupSeries.objects.ORDER_DESCENDING)
+    query = query.order_by("round_number", CupSeries.objects.ORDER_DESCENDING)
+    query = query.order_by("match_number", CupSeries.objects.ORDER_DESCENDING)
+    cup: CupSeries = query.first()
+    if not cup:
+        print("No cup found")
+        return
+    if cup.round_number == 1:
+        print("Cup is still in 1st round. It cannot be fixed")
+        return
+    if CupConfig.get_total_group_count(player_per_group) != cup.total_group_count:
+        print(f"The group count in cup {cup.total_group_count} does not match with the player_per_group input "
+              f"{CupConfig.get_total_group_count(player_per_group)}")
+        return
+    group_count: int = cup.total_group_count
+    round_calculator: RoundCalculator = RoundCalculator(group_count)
+    if cup.round_number == round_calculator.final_round_number:
+        print(f"Cup is complete. Final round is set.\n{cup}")
+        return
+    print(f"Cup with invalid state found.\nLast cup is as follows:\n{cup}")
+    cups_to_be_created: List[CupSeries] = list()
+    if round_calculator.total_matches_per_round(cup.round_number) == cup.match_number:
+        start_round_number: int = cup.round_number + 1
+        start_match_number: int = 1
+    else:
+        start_round_number: int = cup.round_number
+        start_match_number: int = cup.match_number + 1
+    for round_number in range(start_round_number, round_calculator.total_rounds + 1):
+        next_match_number: int = start_match_number if round_number == start_round_number else 1
+        for match_number in range(next_match_number, round_calculator.total_matches_per_round(round_number) + 1):
+            cup: CupSeries = CupSeries(cup.season, round_number, match_number, group_count, player_per_group)
+            cups_to_be_created.append(cup)
+    CupSeries.objects.create_all(CupSeries.objects.to_dicts(cups_to_be_created))
+    print(f"{len(cups_to_be_created)} created to fix the state of the cup: {cup}")
