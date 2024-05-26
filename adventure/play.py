@@ -1,11 +1,12 @@
 import json
+import random
 from random import sample
 from typing import List, Callable, Tuple
 
 from munch import Munch
 
 from adventure.errors import UnableToSetOpponent
-from adventure.models import Adventure
+from adventure.models import Adventure, AdventureConfig
 from adventure.response import StandardResponse, RequestType, SuccessMessage
 from methods import perform_io_task
 from models import Group, Player, Match
@@ -51,17 +52,22 @@ def create_season(request: Munch) -> Munch:
     # adventurer_group_names: List[str] = sample(list(groupwise_players), k=AdventureConfig.INITIAL_ADVENTURERS_COUNT)
     # new_adventure.adventurers = [sample(groupwise_players[group_name], k=1)[0] for group_name in adventurer_group_names]
     # shuffle(new_adventure.adventurers)
-    player_ranks: List[int] = sample(range(1000), k=50)
+    player_ranks: List[int] = sample(range(AdventureConfig.PLAYER_RANKS_UPTO), k=AdventureConfig.INITIAL_ADVENTURERS_COUNT + 30)
     task_list = [Player.objects.filter_by(rank=r).first for r in player_ranks]
     players: List[Player] = perform_io_task(task_list)
     players = [p for p in players if p]
-    if len(players) < 20:
+    if len(players) < AdventureConfig.INITIAL_ADVENTURERS_COUNT:
         rsp.message.error = "Unable to set adventures. Try again."
         return rsp.dict
-    new_adventure.set_adventurers(players[:20])
+    random.shuffle(players)
+    new_adventure.set_adventurers(players[:AdventureConfig.INITIAL_ADVENTURERS_COUNT])
     groups: List[Group] = Group.objects.order_by("rank").limit(100).get()
     new_adventure.init_remaining_opponents(groups)
-    set_opponent(new_adventure)
+    try:
+        set_opponent(new_adventure)
+    except UnableToSetOpponent:
+        rsp.message.error = "Unable to set opponent. Relax restriction on opponent selection."
+        return rsp.dict
     new_adventure.create()
     rsp.message.success = SuccessMessage.CREATE_SEASON
     return rsp.dict
@@ -147,7 +153,11 @@ def update_play_result(request: dict) -> Munch:
     task_list.extend([Player.objects.filter_by(name=adventurer).first for adventurer in adventure.acquired])
     adventurers: List[Player] = perform_io_task(task_list)
     new_round = Adventure.create_next_round(adventure, adventurers)
-    set_opponent(new_round)
+    try:
+        set_opponent(new_round)
+    except UnableToSetOpponent:
+        rsp.message.error = "Unable to set opponent. Relax restriction on opponent selection."
+        return rsp.dict
     new_round.create()
     rsp.message.error = "New Round Created."
     return rsp.dict

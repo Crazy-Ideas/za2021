@@ -13,6 +13,7 @@ from models import Group, Player
 class AdventureConfig:
     PROXIMITY_LIMIT: int = 10  # Change this to restrict / expand the proximity list. Higher than 10 won't have any effect
     INITIAL_ADVENTURERS_COUNT: int = 20  # Change this to update the initial adventurers count
+    PLAYER_RANKS_UPTO: int = 1200
 
 
 class Adventure(FirestoreDocument):
@@ -139,7 +140,14 @@ class Adventure(FirestoreDocument):
         self.opponent_star_player_name = group.player_name
         self.opponent_fullname = group.fullname
         self.opponent_rank = group.rank
-        opponents: List[Player] = [player for player in players if player.name not in self.adventurers and player.rank <= 1000]
+        opponents: List[Player] = [player for player in players
+                                   if player.name not in self.adventurers and player.rank <= AdventureConfig.PLAYER_RANKS_UPTO]
+        if not opponents:
+            opponents: List[Player] = [player for player in players if player.name not in self.adventurers]
+            if not opponents:
+                raise UnableToSetOpponent
+            opponents.sort(key=lambda item: item.rank)
+            opponents = opponents[:1]
         opponents.sort(key=lambda item: item.rank)
         self.opponents = [player.name for player in opponents]
         remaining_group_names = [player_name[:2] for player_name in self.remaining_opponents]
