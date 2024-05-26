@@ -264,6 +264,10 @@ class Player(FirestoreDocument):
         self.wc_won += won
         self.update_score(played=1, won=won)
 
+    @classmethod
+    def get_normalize_score(cls, played: int, won: int) -> int:
+        return int(f"{int(won / played * 10000):05}{played:04}")
+
 
 Player.init()
 
