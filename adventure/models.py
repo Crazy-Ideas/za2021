@@ -1,5 +1,4 @@
-from operator import itemgetter
-from random import sample
+import random
 from typing import List, Tuple
 
 from firestore_ci import FirestoreDocument
@@ -37,7 +36,6 @@ class Adventure(FirestoreDocument):
     def set_adventurers(self, adventurers: List[Player]):
         adventurers.sort(key=lambda item: item.rank)
         self.adventurers = [p.name for p in adventurers]
-        self.score = Player.get_normalize_score(sum(p.played for p in adventurers), sum(p.won for p in adventurers))
 
 
     @classmethod
@@ -46,6 +44,7 @@ class Adventure(FirestoreDocument):
             raise NewRoundCreatedWhileRoundIsInProgress
         new_adventure = cls()
         new_adventure.season = adventure.season
+        new_adventure.score = adventure.score
         new_adventure.round = adventure.round + 1
         new_adventure.set_adventurers(adventurers)
         new_adventure.remaining_opponents = adventure.remaining_opponents[:]
@@ -90,8 +89,10 @@ class Adventure(FirestoreDocument):
         # if not self.adventurers:
         #    raise AdventuresNeedToBeSetBeforeOpponents
         # adventure_groups: Set[str] = {adventurer[:2] for adventurer in self.adventurers}
-        self.remaining_opponents = [group.player_name for group in groups]
-        self.remaining_opponents_score = [Player.get_normalize_score(group.played, group.won) for group in groups]
+        remaining_opponents = list(zip([group.player_name for group in groups], [group.rank for group in groups]))
+        random.shuffle(remaining_opponents)
+        self.remaining_opponents = [opponent[0] for opponent in remaining_opponents]
+        self.remaining_opponents_score = [opponent[1] for opponent in remaining_opponents]
         return
 
     def update_result(self, winner: str, acquired: bool = False):
@@ -99,13 +100,13 @@ class Adventure(FirestoreDocument):
             raise InvalidWinner
         self.matches_played += 1
         if self.is_adventurer(winner):
-            # self.score += 1
+            self.score += 1
             if acquired:
                 self.acquired.append(self.opponents[self.adventurers.index(winner)])
             return
         # Opponent is the winner
         self.released.append(self.adventurers[self.opponents.index(winner)])
-        # self.score -= 1
+        self.score -= 1
         # if not self.remaining_opponents:
         #     return
         # remaining_groups: List[str] = [opponent[:2] for opponent in self.remaining_opponents]
@@ -118,19 +119,21 @@ class Adventure(FirestoreDocument):
 
     def get_proximity(self) -> List[Tuple[str, int]]:
         limit = AdventureConfig.PROXIMITY_LIMIT
-        score = self.score
-        remaining_opponents = [(opponent, abs(self.remaining_opponents_score[index] - score))
+        # score = self.score
+        remaining_opponents = [(opponent, self.remaining_opponents_score[index])  # Just providing the rank will ensure same order
                                for index, opponent in enumerate(self.remaining_opponents)]
-        remaining_opponents.sort(key=itemgetter(1))
+        # remaining_opponents.sort(key=itemgetter(1))
         return remaining_opponents[:limit]
 
     def get_next_opponent(self) -> str:  # return the group name of the next opponent.
         proximity_list: List[Tuple[str, int]] = self.get_proximity()
         if not proximity_list:
             return str()
-        probable_opponents: List[str] = [opponent[:2] for opponent, proximity in proximity_list
+        probable_opponents: List[str] = [opponent[:2] for opponent, proximity in proximity_list  # here proximity is just the rank
                                          if proximity == proximity_list[0][1]]
-        return sample(probable_opponents, k=1)[0]
+        # next_opponent = sample(probable_opponents, k=1)[0]
+        next_opponent = probable_opponents[0]
+        return next_opponent
 
     def set_opponent(self, group: Group, players: List[Player]) -> None:
         if not self.adventurers:

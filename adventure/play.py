@@ -182,7 +182,8 @@ def get_urls(input_player_names: Munch) -> Munch:
     for player_record in players:
         update_player_url(player_record)
     for key in player_urls:
-        player_urls[key].sort(key=lambda item: item.rank)
+        if key != "proximity":
+            player_urls[key].sort(key=lambda item: item.rank)
     return player_urls
 
 
@@ -235,7 +236,7 @@ def get_season(request: Munch) -> Munch:
             player_urls.proximity[index].rank = group.rank
             player_urls.proximity[index].proximity = next(
                 proximity for opponent, proximity in opponent_proximity if opponent[:2] == group.name)
-        player_urls.proximity.sort(key=lambda item: item.proximity)
+        # player_urls.proximity.sort(key=lambda item: item.proximity)
     rsp.data = Munch(**player_urls, **get_adventure_details(adventure))
     rsp.message.success = SuccessMessage.GET_SEASON
     return rsp.dict
