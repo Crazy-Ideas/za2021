@@ -34,8 +34,9 @@ class Adventure(FirestoreDocument):
         self.remaining_opponents_score: List[int] = list()
 
     def set_adventurers(self, adventurers: List[Player]):
-        adventurers.sort(key=lambda item: item.rank)
+        # adventurers.sort(key=lambda item: item.rank)
         self.adventurers = [p.name for p in adventurers]
+        random.shuffle(self.adventurers)
 
 
     @classmethod
@@ -111,7 +112,7 @@ class Adventure(FirestoreDocument):
         #     return
         # remaining_groups: List[str] = [opponent[:2] for opponent in self.remaining_opponents]
         # opponent_group = self.opponents[self.opponents.index(winner)][:2]
-        # if opponent_group not in remaining_groups:  # The opponent has already played
+        # if opponent_group not in remaining_groups: # The opponent has already played
         #     return
         # opponent_index = remaining_groups.index(opponent_group)
         # self.remaining_opponents_score[opponent_index] += 1
@@ -120,7 +121,7 @@ class Adventure(FirestoreDocument):
     def get_proximity(self) -> List[Tuple[str, int]]:
         limit = AdventureConfig.PROXIMITY_LIMIT
         # score = self.score
-        remaining_opponents = [(opponent, self.remaining_opponents_score[index])  # Just providing the rank will ensure same order
+        remaining_opponents = [(opponent, self.remaining_opponents_score[index])  # Just providing the rank will ensure the same order
                                for index, opponent in enumerate(self.remaining_opponents)]
         # remaining_opponents.sort(key=itemgetter(1))
         return remaining_opponents[:limit]

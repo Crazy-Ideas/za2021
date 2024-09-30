@@ -222,7 +222,9 @@ def get_season(request: Munch) -> Munch:
         proximity_group_names: List[str] = [opponent[:2] for opponent, _ in opponent_proximity]
         groups: List[Group] = Group.objects.filter("name", Group.objects.IN,
                                                    proximity_group_names).get() if proximity_group_names else list()
-    adventure.adventurers = adventure.adventurers[:20]
+    # TODO: The following breaks the counts and now the adventures are no longer sorted by rank.
+    #  Figure out a better way to optimise when player has high count.
+    # adventure.adventurers = adventure.adventurers[:20]
     player_urls = get_urls(Munch(adventurers=adventure.adventurers, opponents=adventure.opponents, acquired=adventure.acquired,
                                  released=adventure.released, proximity=proximity_names))
     if not adventure.is_round_over():
