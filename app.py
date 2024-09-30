@@ -60,7 +60,7 @@ def make_shell_context() -> dict:
         "Match": Match,
         "update_url": update_url,
         "generate_url": generate_url,
-        "methods": methods,
+        "game_methods": methods,
         "FINAL_SERIES_TYPES": FINAL_SERIES_TYPES,
         "game": upload,
         "wc_methods": wc_methods,

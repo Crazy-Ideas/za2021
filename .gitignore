@@ -2,6 +2,8 @@ venv/
 mdb/
 .idea/
 temp/
+.venv/
+secret/
 __pycache__
 *.env
 *.csv
