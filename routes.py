@@ -2,11 +2,11 @@ import json
 import random
 from datetime import datetime
 from typing import List, Callable
+from urllib.parse import urlparse as url_parse
 
 import pytz
 from flask import render_template, redirect, url_for, request, make_response, Response, flash
 from flask_login import login_user, current_user, logout_user
-from werkzeug.urls import url_parse
 
 from app import app, CI_SECURITY
 from forms import LoginForm, PlayFriendlyForm
