@@ -14,8 +14,8 @@ from super_cup.errors import PlayerNotFound, GroupAlreadyInitialized, InvalidNum
 class CupConfig:
     TYPE = "super_cup"
     TBD = "TBD"
-    VALID_PLAYERS_PER_GROUP = (1, 3, 5, 7, 9, 11, 13)
-    INDEXED_GROUP_COUNT = (1024, 64, 16, 8, 8, 4, 4)
+    VALID_PLAYERS_PER_GROUP = (1, 2, 3, 4, 5, 7, 9)
+    INDEXED_GROUP_COUNT = (1024, 128, 64, 32, 16, 8, 8)
 
     # TODO: For Seeding top 32 in players in 1024 players  list(zip_longest(*[iter(l2)]*31))
 
@@ -77,6 +77,11 @@ class CupSeries(FirestoreDocument):
         shuffle(player_indices)
         self.match_player1_names = [self.player1_names[player_index[0]] for player_index in player_indices]
         self.match_player2_names = [self.player2_names[player_index[1]] for player_index in player_indices]
+        if self.player_per_group % 2 == 0:  # If even number of players then add a match for the highest rank in each group
+            self.match_player1_names.append(self.star_player1)
+            self.match_player2_names.append(self.star_player2)
+        return
+
 
     def copy_group(self, series: 'CupSeries'):
         player_type, index = self.get_player_type_and_index()
@@ -180,7 +185,10 @@ class CupSeries(FirestoreDocument):
         return self.is_group1_initialized() and self.is_group2_initialized()
 
     def is_series_completed(self) -> bool:
-        return self.are_groups_initialized() and len(self.match_winner_names) == len(self.match_player1_names)
+        if not self.are_groups_initialized():
+            return False
+        expected_win_count_to_win_series: int = int(self.total_games / 2) + 1
+        return self.group1_score >= expected_win_count_to_win_series or self.group2_score >= expected_win_count_to_win_series
 
     def is_group1_winner(self) -> bool:
         return self.is_series_completed() and self.group1_score > self.group2_score
@@ -256,7 +264,7 @@ class CupSeries(FirestoreDocument):
         return len(self.match_winner_names) + 1
 
     @property
-    def total_games(self):
+    def total_games(self) -> int:
         return len(self.match_player1_names)
 
     def get_winner_index(self):
