@@ -16,7 +16,7 @@ def select_players(group_count: int, player_per_group: int) -> List[Player]:
     if player_per_group == 1:
         selected_players: List[Player] = Player.objects.order_by("rank").limit(CupConfig.get_total_group_count(player_per_group)).get()
         return selected_players
-    filtered_player_count: int = group_count * player_per_group * player_per_group if player_per_group > 2 else 1024
+    filtered_player_count: int = CupConfig.get_filtered_player_count(player_per_group)
     players: List[Player] = Player.objects.order_by("rank").limit(filtered_player_count).get()
     players.sort(key=lambda item: item.rank, reverse=False)
     selected_players: List[Player] = list()

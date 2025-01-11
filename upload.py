@@ -288,7 +288,7 @@ def analyze_player_rankings(upto: int = -1, team_count: int = 16, player_count_p
         selected_players.extend(nominated_teams[player.group_name])
         if len(selected_players) >= expected_count:
             break
-    print(f"Total teams that can be selected is {sum(1 if player_count >= player_count_per_team else 0 for _, player_count in selected_players)}")
+    print(f"Total teams that can be selected is {len(selected_teams)}.")
     print(selected_players)
 
 

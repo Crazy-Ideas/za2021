@@ -16,6 +16,7 @@ class CupConfig:
     TBD = "TBD"
     VALID_PLAYERS_PER_GROUP = (1, 2, 3, 4, 5, 7, 9)
     INDEXED_GROUP_COUNT = (1024, 128, 64, 32, 16, 8, 8)
+    FILTERED_PLAYER_COUNT = (1024, 1024, 1024, 1024, 1024, 7 * 7 * 8, 9 * 9 * 8)
 
     # TODO: For Seeding top 32 in players in 1024 players  list(zip_longest(*[iter(l2)]*31))
 
@@ -29,6 +30,11 @@ class CupConfig:
             raise InvalidPlayerPerGroup
         return cls.INDEXED_GROUP_COUNT[cls.VALID_PLAYERS_PER_GROUP.index(player_per_group)]
 
+    @classmethod
+    def get_filtered_player_count(cls, player_per_group: int):
+        if not cls.is_valid_player_per_group(player_per_group):
+            raise InvalidPlayerPerGroup
+        return cls.FILTERED_PLAYER_COUNT[cls.VALID_PLAYERS_PER_GROUP.index(player_per_group)]
 
 class CupSeries(FirestoreDocument):
     PLAYER1: str = "player1"
