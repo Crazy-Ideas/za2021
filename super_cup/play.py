@@ -167,6 +167,8 @@ def get_season(request: Munch) -> Munch:
     else:
         rsp.data.earlier_rounds = [series for series in series_list if series.round_number in round_calculator.earlier_round_numbers]
     rsp.data.quarter_finals = [series for series in series_list if series.round_number == round_calculator.quarter_final_round_number]
+    rsp.data.semi_finals = [series for series in series_list if series.round_number == round_calculator.semi_final_round_number]
+    rsp.data.final = next(series for series in series_list if series.round_number == round_calculator.final_round_number)
     rsp.data.finals = [series for series in series_list
                        if series.round_number in (round_calculator.semi_final_round_number, round_calculator.final_round_number)]
     rsp.data.season = rsp.request.season
