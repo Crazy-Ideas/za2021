@@ -16,7 +16,7 @@ class CupConfig:
     TBD = "TBD"
     VALID_PLAYERS_PER_GROUP = (1, 2, 3, 4, 5, 7, 9)
     INDEXED_GROUP_COUNT = (1024, 128, 64, 32, 16, 8, 8)
-    FILTERED_PLAYER_COUNT = (1024, 1024, 1024, 1024, 1024, 7 * 7 * 8, 9 * 9 * 8)
+    FILTERED_PLAYER_COUNT = (1024, 1500, 1500, 1500, 1500, 7 * 7 * 8, 9 * 9 * 8)
 
     # TODO: For Seeding top 32 in players in 1024 players  list(zip_longest(*[iter(l2)]*31))
 
