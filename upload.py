@@ -17,16 +17,9 @@ from s2022 import wc_methods
 from super_cup.models import CupSeries, RoundCalculator, CupConfig
 
 NEW_PLAYERS: dict = {
-    "AA": "Ana de Armas",
-    "CH": "Chloe Bennet",
-    "HA": "Hayley Atwell",
-    "HT": "Hailee Steinfeld",
-    "JO": "Jenna Ortega",
-    "ML": "Milly Alcock",
-    "MX": "Mckenna Grace",
-    "NB": "Nina Dobrev",
-    "RT": "Robin Tunney",
-    "TM": "Thomasin McKenzie",
+    "EX": "Emma Myers",
+    "LH": "Lucy Hale",
+    "SX": "Stephanie Scott",
 }
 
 
@@ -107,7 +100,7 @@ def load_from_temp():
     Player.objects.create_all(Player.objects.to_dicts(new_players))
     Group.objects.save_all(updated_groups)
     Group.objects.create_all(Group.objects.to_dicts(created_groups))
-    print(f"{len(new_players)} players uploaded in {seconds} seconds.")
+    print(f"{total_files} players uploaded in {seconds} seconds.")
 
 
 def _score_groups():
